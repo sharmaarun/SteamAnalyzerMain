@@ -1,0 +1,23 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="row">
+                <div class="col-lg-1">
+                    <input class="form-control" type="text" placeholder="untitled"/>
+                </div>
+                <div class="col-lg-11">
+                    <button class="btn btn-sm btn-danger btn-raised">
+                        Save
+                    </button>
+                    <button class="btn btn-sm btn-danger btn-raised" *ngFor="let tool of saTools" (click)="addObject(tool)">
+                            {{tool.name}}
+                    </button>
+            </div>
+        </div>
+
+    </div>
+    <div class="col-lg-12" id="drawBox"></div>
+
+</div>
+
+</div>

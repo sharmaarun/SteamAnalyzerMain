@@ -1,0 +1,166 @@
+
+> webui@1.0.0 start /home/arunsharma/MS/research/THS/projects/test-twitter/webui
+> npm run lite
+
+
+> webui@1.0.0 lite /home/arunsharma/MS/research/THS/projects/test-twitter/webui
+> lite-server
+
+** browser-sync config **
+{ injectChanges: false,
+  files: [ './public_html/**/*.{html,htm,css,js}' ],
+  watchOptions: { ignored: 'node_modules' },
+  server: 
+   { baseDir: './public_html',
+     middleware: [ [Function], [Function] ] },
+  port: 8000 }
+[BS] Access URLs:
+ -------------------------------------
+       Local: http://localhost:8001
+    External: http://192.168.2.26:8001
+ -------------------------------------
+          UI: http://localhost:3002
+ UI External: http://192.168.2.26:3002
+ -------------------------------------
+[BS] Serving files from: ./public_html
+[BS] Watching files...
+[90m16.08.13 22:35:07[0m [36m304[0m [35mGET[0m [90m/index.html[0m
+[90m16.08.13 22:35:07[0m [33m404[0m [35mGET[0m [90m/styles.css[0m
+[90m16.08.13 22:35:07[0m [36m304[0m [35mGET[0m [90m/js/app.js[0m
+[90m16.08.13 22:35:07[0m [36m304[0m [35mGET[0m [90m/app/app.component.js[0m
+[90m16.08.13 22:35:07[0m [36m304[0m [35mGET[0m [90m/app/app.module.js[0m
+[90m16.08.13 22:35:07[0m [36m304[0m [35mGET[0m [90m/app/main.js[0m
+
+> webui@1.0.0 start /home/arunsharma/MS/research/THS/projects/test-twitter/webui
+> npm run lite
+
+
+> webui@1.0.0 lite /home/arunsharma/MS/research/THS/projects/test-twitter/webui
+> lite-server
+
+** browser-sync config **
+{ injectChanges: false,
+  files: [ './public_html/**/*.{html,htm,css,js}' ],
+  watchOptions: { ignored: 'node_modules' },
+  server: 
+   { baseDir: './public_html',
+     middleware: [ [Function], [Function] ] },
+  port: 8000 }
+[BS] Access URLs:
+ -------------------------------------
+       Local: http://localhost:8001
+    External: http://192.168.2.26:8001
+ -------------------------------------
+          UI: http://localhost:3002
+ UI External: http://192.168.2.26:3002
+ -------------------------------------
+[BS] Serving files from: ./public_html
+[BS] Watching files...
+[90m16.08.13 22:37:34[0m [36m304[0m [35mGET[0m [90m/index.html[0m
+[90m16.08.13 22:37:35[0m [36m304[0m [35mGET[0m [90m/js/app.js[0m
+[90m16.08.13 22:37:35[0m [33m404[0m [35mGET[0m [90m/styles.css[0m
+[90m16.08.13 22:37:35[0m [36m304[0m [35mGET[0m [90m/app/app.component.js[0m
+[90m16.08.13 22:37:35[0m [36m304[0m [35mGET[0m [90m/app/app.module.js[0m
+[90m16.08.13 22:37:35[0m [36m304[0m [35mGET[0m [90m/app/main.js[0m
+
+> webui@1.0.0 start /home/arunsharma/MS/research/THS/projects/test-twitter/webui
+> npm run lite
+
+
+> webui@1.0.0 lite /home/arunsharma/MS/research/THS/projects/test-twitter/webui
+> lite-server
+
+** browser-sync config **
+{ injectChanges: false,
+  files: [ './public_html/**/*.{html,htm,css,js}' ],
+  watchOptions: { ignored: 'node_modules' },
+  server: 
+   { baseDir: './public_html',
+     middleware: [ [Function], [Function] ] },
+  port: 8000 }
+[BS] Access URLs:
+ -------------------------------------
+       Local: http://localhost:8000
+    External: http://192.168.2.26:8000
+ -------------------------------------
+          UI: http://localhost:3001
+ UI External: http://192.168.2.26:3001
+ -------------------------------------
+[BS] Serving files from: ./public_html
+[BS] Watching files...
+[90m16.08.13 22:41:20[0m [36m304[0m [35mGET[0m [90m/index.html[0m
+[90m16.08.13 22:41:20[0m [33m404[0m [35mGET[0m [90m/styles.css[0m
+[90m16.08.13 22:41:20[0m [36m304[0m [35mGET[0m [90m/js/app.js[0m
+[90m16.08.13 22:41:20[0m [36m304[0m [35mGET[0m [90m/app/app.component.js[0m
+[90m16.08.13 22:41:20[0m [36m304[0m [35mGET[0m [90m/app/app.module.js[0m
+[90m16.08.13 22:41:21[0m [36m304[0m [35mGET[0m [90m/app/main.js[0m
+
+> webui@1.0.0 start /home/arunsharma/MS/research/THS/projects/test-twitter/webui
+> npm run lite
+
+
+> webui@1.0.0 lite /home/arunsharma/MS/research/THS/projects/test-twitter/webui
+> lite-server
+
+** browser-sync config **
+{ injectChanges: false,
+  files: [ './public_html/**/*.{html,htm,css,js}' ],
+  watchOptions: { ignored: 'node_modules' },
+  server: 
+   { baseDir: './public_html',
+     middleware: [ [Function], [Function] ] },
+  port: 8000 }
+[BS] Access URLs:
+ -------------------------------------
+       Local: http://localhost:8000
+    External: http://192.168.2.26:8000
+ -------------------------------------
+          UI: http://localhost:3001
+ UI External: http://192.168.2.26:3001
+ -------------------------------------
+[BS] Serving files from: ./public_html
+[BS] Watching files...
+[90m16.08.13 22:46:11[0m [36m304[0m [35mGET[0m [90m/index.html[0m
+[90m16.08.13 22:46:11[0m [33m404[0m [35mGET[0m [90m/styles.css[0m
+[90m16.08.13 22:46:11[0m [36m304[0m [35mGET[0m [90m/js/app.js[0m
+[90m16.08.13 22:46:11[0m [36m304[0m [35mGET[0m [90m/app/app.component.js[0m
+[90m16.08.13 22:46:11[0m [36m304[0m [35mGET[0m [90m/app/app.module.js[0m
+[90m16.08.13 22:46:11[0m [36m304[0m [35mGET[0m [90m/app/main.js[0m
+[90m16.08.13 22:46:14[0m [36m304[0m [35mGET[0m [90m/index.html[0m
+[90m16.08.13 22:46:14[0m [33m404[0m [35mGET[0m [90m/styles.css[0m
+[90m16.08.13 22:46:14[0m [36m304[0m [35mGET[0m [90m/js/app.js[0m
+[90m16.08.13 22:46:14[0m [36m304[0m [35mGET[0m [90m/app/app.component.js[0m
+[90m16.08.13 22:46:14[0m [36m304[0m [35mGET[0m [90m/app/app.module.js[0m
+[90m16.08.13 22:46:14[0m [36m304[0m [35mGET[0m [90m/app/main.js[0m
+
+> webui@1.0.0 start /home/arunsharma/MS/research/THS/projects/test-twitter/webui
+> npm run lite
+
+
+> webui@1.0.0 lite /home/arunsharma/MS/research/THS/projects/test-twitter/webui
+> lite-server
+
+** browser-sync config **
+{ injectChanges: false,
+  files: [ './public_html/**/*.{html,htm,css,js}' ],
+  watchOptions: { ignored: 'node_modules' },
+  server: 
+   { baseDir: './public_html',
+     middleware: [ [Function], [Function] ] },
+  port: 8000 }
+[BS] Access URLs:
+ -------------------------------------
+       Local: http://localhost:8000
+    External: http://192.168.2.26:8000
+ -------------------------------------
+          UI: http://localhost:3001
+ UI External: http://192.168.2.26:3001
+ -------------------------------------
+[BS] Serving files from: ./public_html
+[BS] Watching files...
+[90m16.08.13 22:48:24[0m [36m304[0m [35mGET[0m [90m/index.html[0m
+[90m16.08.13 22:48:24[0m [33m404[0m [35mGET[0m [90m/styles.css[0m
+[90m16.08.13 22:48:24[0m [36m304[0m [35mGET[0m [90m/js/app.js[0m
+[90m16.08.13 22:48:24[0m [36m304[0m [35mGET[0m [90m/app/app.component.js[0m
+[90m16.08.13 22:48:24[0m [36m304[0m [35mGET[0m [90m/app/app.module.js[0m
+[90m16.08.13 22:48:24[0m [36m304[0m [35mGET[0m [90m/app/main.js[0m
