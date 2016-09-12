@@ -24,6 +24,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
+var common_1 = require('@angular/common');
 var AppComponent = (function () {
     function AppComponent() {
         this.title = 'THS';
@@ -31,7 +32,8 @@ var AppComponent = (function () {
     AppComponent = __decorate([
         core_1.Component({
             selector: 'my-app',
-            template: '<router-outlet></router-outlet>'
+            template: '<router-outlet></router-outlet>',
+            directives: [common_1.FORM_DIRECTIVES]
         }), 
         __metadata('design:paramtypes', [])
     ], AppComponent);

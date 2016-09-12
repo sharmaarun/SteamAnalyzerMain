@@ -15,15 +15,17 @@
  */
 
 
-import {Component} from '@angular/core';
-import { FORM_DIRECTIVES } from '@angular/common';
-
-@Component({
-    selector : 'my-app',
-    template: '<router-outlet></router-outlet>',
-    directives: [FORM_DIRECTIVES]
-})
-
-export class AppComponent {
-    title = 'THS';
-}
+/*
+ * A common file to hold enums, constants etc
+ */
+ 
+ export enum ComponentType  {
+     PANEL = 0x01,
+     STREAMPOINT
+ };
+ 
+ export enum ProcessType {
+     SEARCH = 0x01,
+     SCRIPT,
+          
+ }

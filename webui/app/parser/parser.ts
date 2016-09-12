@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
+/*
+ * Parses the client end project diagrams into JSON format.This JSON
+ * is later submitted to the backend compiler for compiling into a jar.
+ */
 
-import {Component} from '@angular/core';
-import { FORM_DIRECTIVES } from '@angular/common';
-
-@Component({
-    selector : 'my-app',
-    template: '<router-outlet></router-outlet>',
-    directives: [FORM_DIRECTIVES]
-})
-
-export class AppComponent {
-    title = 'THS';
+export class ClientParser{
+    
 }

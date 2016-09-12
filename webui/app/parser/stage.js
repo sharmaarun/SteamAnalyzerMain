@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2016 arunsharma.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,17 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-import {Component} from '@angular/core';
-import { FORM_DIRECTIVES } from '@angular/common';
-
-@Component({
-    selector : 'my-app',
-    template: '<router-outlet></router-outlet>',
-    directives: [FORM_DIRECTIVES]
-})
-
-export class AppComponent {
-    title = 'THS';
-}
+"use strict";
+var Stage = (function () {
+    function Stage() {
+    }
+    return Stage;
+}());
+exports.Stage = Stage;
+//# sourceMappingURL=stage.js.map

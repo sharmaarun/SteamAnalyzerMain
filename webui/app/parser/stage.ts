@@ -15,15 +15,11 @@
  */
 
 
-import {Component} from '@angular/core';
-import { FORM_DIRECTIVES } from '@angular/common';
-
-@Component({
-    selector : 'my-app',
-    template: '<router-outlet></router-outlet>',
-    directives: [FORM_DIRECTIVES]
-})
-
-export class AppComponent {
-    title = 'THS';
+export class Stage {
+    
+    //member vars
+    _id;
+    _name;
+    _processes;
+    
 }

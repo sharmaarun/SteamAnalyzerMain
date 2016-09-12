@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2016 arunsharma.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-import {Component} from '@angular/core';
-import { FORM_DIRECTIVES } from '@angular/common';
-
-@Component({
-    selector : 'my-app',
-    template: '<router-outlet></router-outlet>',
-    directives: [FORM_DIRECTIVES]
-})
-
-export class AppComponent {
-    title = 'THS';
-}
+"use strict";
+/*
+ * A common file to hold enums, constants etc
+ */
+(function (ComponentType) {
+    ComponentType[ComponentType["PANEL"] = 1] = "PANEL";
+    ComponentType[ComponentType["STREAMPOINT"] = 2] = "STREAMPOINT";
+})(exports.ComponentType || (exports.ComponentType = {}));
+var ComponentType = exports.ComponentType;
+;
+(function (ProcessType) {
+    ProcessType[ProcessType["SEARCH"] = 1] = "SEARCH";
+    ProcessType[ProcessType["SCRIPT"] = 2] = "SCRIPT";
+})(exports.ProcessType || (exports.ProcessType = {}));
+var ProcessType = exports.ProcessType;
+//# sourceMappingURL=common.js.map

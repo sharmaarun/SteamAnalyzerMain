@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import {ProcessType} from './common';
 
-
-import {Component} from '@angular/core';
-import { FORM_DIRECTIVES } from '@angular/common';
-
-@Component({
-    selector : 'my-app',
-    template: '<router-outlet></router-outlet>',
-    directives: [FORM_DIRECTIVES]
-})
-
-export class AppComponent {
-    title = 'THS';
+export class Process {
+    _id;
+    _name;
+    _type: ProcessType;
+    
+    public constructor() {
+        this._id = -1;
+        this._name = "Untitled Process";
+    }
+    
+    
 }
