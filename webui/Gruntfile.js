@@ -37,7 +37,8 @@ module.exports = function (grunt) {
                         "node_modules/@angular/platform-browser/bundles/platform-browser.umd.js",
                         "node_modules/@angular/platform-browser-dynamic/bundles/platform-browser-dynamic.umd.js",
                         "node_modules/systemjs/dist/system.js",
-                        "js/pixi.min.js"
+                        "js/pixi.min.js",
+                        "js/ace-builds/src-min-noconflict"
                         // "js/pixi.dom.js"
                     ],
                     'js/app.js': ['app/**/*.js'],
