@@ -1,4 +1,5 @@
 /webui/nbproject/private/
 /webui/node_modules/
 npm-debug.log
-/target/
+/core/target/
+/compiler/target/

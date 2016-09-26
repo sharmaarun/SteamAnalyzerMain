@@ -21,6 +21,7 @@
  */
 package com.sa.components.base;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sa.core.IConnector;
 import com.sa.core.StreamBase;
 import java.beans.Transient;
@@ -55,11 +56,7 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
         sc = _sc;
         tsc = new JavaStreamingContext(sc, Seconds.apply(1));
 
-        //set twitter auth creds
-        System.setProperty("twitter4j.oauth.consumerKey", "xSL5FtNNrXqYtj0qyLBAoEHJF");
-        System.setProperty("twitter4j.oauth.consumerSecret", "MlAkJxyGxAfJZ28HZxXu8XSWZpVG8zDepkTYdjqyoArPpdRM22");
-        System.setProperty("twitter4j.oauth.accessToken", "81409457-zSbn3elxFuBregKhjQQ4l3quNzLEuaA9KnKGgZ23l");
-        System.setProperty("twitter4j.oauth.accessTokenSecret", "i7frmi03QOrr0XBZ2t7jOgsHfwCmvGwIV6hkXW36EuD49");
+        
         
         //create a twitter stream using spark streaing context
         stream = TwitterUtils.createStream(tsc);
@@ -67,6 +64,29 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
         //initialize the input buffer. It serves as the temporary memory storage of incoming tweets.
         //TODO: make this persist into a file in hdfs
         inputBuffer = new ArrayList<JavaRDD<String>>();
+    }
+    
+    /**
+     * This method helps the plugin/component to operate on meta-data and do initialization before class instantiation.
+     * 
+     * This method should return a string the represents the initialization code. For this plugin, we need to initialize the
+     * credential info. Hence we create a code-string that doesn't depend on variables but hard coded string values instead.
+     * @param metadata 
+     */
+    public static String preload(JsonNode metadata) {
+        String code = "";
+        String ck = metadata.get("credentials").get("consumer_key").asText();
+        String cs = metadata.get("credentials").get("consumer_secret").asText();
+        String at = metadata.get("credentials").get("access_token").asText();
+        String ats = metadata.get("credentials").get("access_token_secret").asText();
+        //set twitter auth creds
+        code += "System.setProperty(\"twitter4j.oauth.consumerKey\", \""+ck+"\");\n" +
+"        System.setProperty(\"twitter4j.oauth.consumerSecret\", \""+cs+"\");\n" +
+"        System.setProperty(\"twitter4j.oauth.accessToken\", \""+at+"\");\n" +
+"        System.setProperty(\"twitter4j.oauth.accessTokenSecret\", \""+ats+"\");\n";
+        
+        return code;
+        
     }
 
     /**

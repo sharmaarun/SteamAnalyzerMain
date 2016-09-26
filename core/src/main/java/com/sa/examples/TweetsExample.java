@@ -19,22 +19,29 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.sa.core;
+package com.sa.examples;
 
-import java.io.Serializable;
+import com.sa.components.base.TwitterStreamProvider;
+import com.sa.core.StreamAnalyzer;
+import java.util.concurrent.TimeUnit;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.streaming.Seconds;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
 
 /**
- * Base class for all the stream I/O components
+ *
  * @author arunsharma
  */
-public abstract class StreamBase{
+public class TweetsExample {
     
-    protected JavaSparkContext sc;
-    protected JavaStreamingContext tsc;
-    
-    public abstract void start();
+    public static void main(String args[]) {
+        
+        StreamAnalyzer sa = StreamAnalyzer.initializeStandalone();
+        JavaSparkContext sc = sa.getContext();
+        
+        TwitterStreamProvider tsp = new TwitterStreamProvider(sc);
+        
+        tsp.start();
+        
+    }
     
 }
