@@ -24,8 +24,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
+var http_1 = require("@angular/http");
+var router_1 = require('@angular/router');
 var CreateProjectPage = (function () {
-    function CreateProjectPage() {
+    function CreateProjectPage(_http, route) {
+        this._http = _http;
+        this.route = route;
+        this.projectName = "";
+        this.preloadProject = false;
         this.title = "Create Project";
         this._zoomLevel = 1;
         // tools
@@ -46,55 +52,100 @@ var CreateProjectPage = (function () {
         this.saTools = [];
         this.saAllObjects = [];
         this.saSelectedObject = {};
+        this.plugins = [];
         //objects
+        this.topology = { name: 'Untitiled' + new Date().getMilliseconds(), stages: [], connections: [] };
         this.connections = [];
         //event flags
         this.dragMode = false;
         this.dragging = false;
         this.connectMode = false;
+        this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this._this_ = this;
         this.saPixi = PIXI;
         this.bgColor = 0xFFFFFF;
-        //load all th        e tools
+        //load all the tools
         //        for (var i = 0; i < this.saToolsImages.length;         i++) {
         //            var obj = new this.saPixi.Sprite(this.saPixi.Texture.fromImage(this.saToolsImages[i].        image))
         //            this.saTools.push({'name':this.saToolsImages[i].name, tool:         obj});
         //        }
-        this.saPixi.loader
-            .add(this.saToolsImages)
-            .add(this.saControlsImages)
-            .add(this.saToolSprites)
-            .load(this.saInit);
-        var _this_ = this;
+        //setup topology
+        if (CreateProjectPage.__LOAD_ONCE_EDITOR) {
+            this.saPixi.loader
+                .add(this.saToolsImages)
+                .add(this.saControlsImages)
+                .add(this.saToolSprites)
+                .load(this.saInit);
+        }
         setTimeout(function () {
             _this_.saSetup();
+            CreateProjectPage.__LOAD_ONCE_EDITOR = false;
         }, 1000);
-    }
-    CreateProjectPage.prototype.saInit = function () {
         var _this_ = this;
+        this.http = this._http;
+        //load plugins
+        this._http.get('api/plugins', this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) { _this_.plugins = p; }, function (e) { console.log(e); }, function (s) { console.log(s); });
+    }
+    CreateProjectPage.prototype.ngOnInit = function () {
+        var _this = this;
+        this.route.params.subscribe(function (params) {
+            _this.projectName = params['name']; // (+) converts string 'id' to a number
+            _this.preloadProject = true;
+            // In a real app: dispatch action to load the details here.
+        });
+    };
+    CreateProjectPage.prototype.saInit = function () {
+    };
+    CreateProjectPage.prototype.showStage = function () {
+        console.log(this.stage);
     };
     CreateProjectPage.prototype.saSetup = function () {
         //once all tool images loaded, start setup
-        this.saTools.push({ _id: 0 });
-        this.saTools[0].saImage = this.saToolSprites[0];
-        this.saTools[0].name = 'Panel';
-        this.saTools[0].resizable = true;
-        this.saTools[0].size = { w: 200, h: 250 };
-        this.saTools[0].size = { w: 200, h: 250 };
-        this.saTools[0].properties = [
-            { name: 'Type', type: 'text', defaultValue: 'KEYWORD_SEARCH', object: name, nv: '' },
-            { name: 'Keyword', type: 'text', defaultValue: '', object: name, nv: '' },
-        ];
-        this.saTools.push({ _id: 1 });
-        this.saTools[1].saImage = this.saToolsImages[1];
-        this.saTools[1].name = 'StreamPoint';
-        this.saTools[1].resizable = false;
-        this.saTools[1].size = { w: 100, h: 100 };
-        this.saTools.push({ _id: 2 });
-        this.saTools[2].saImage = this.saToolsImages[2];
-        this.saTools[2].name = 'DataBase';
-        this.saTools[2].resizable = false;
-        this.saTools[2].size = { w: 100, h: 100 };
+        //        this.saTools.push({ _id: 0 });
+        //        this.saTools[0].saImage = this.saToolSprites[0];
+        //        this.saTools[0].name = 'Panel';
+        //        this.saTools[0].resizable = true;
+        //        this.saTools[0].size = { w: 200, h: 250 };
+        //        this.saTools[0].size = { w: 200, h: 250 };
+        //        this.saTools[0].properties = [
+        //            { name: 'Type', type: 'text', defaultValue: 'KEYWORD_SEARCH', object: name, nv: '' },
+        //            { name: 'Keyword', type: 'text', defaultValue: '', object: name, nv: '' },
+        //        ];
+        //
+        //        this.saTools.push({ _id: 1 });
+        //        this.saTools[1].saImage = this.saToolsImages[1];
+        //        this.saTools[1].name = 'StreamPoint';
+        //        this.saTools[1].resizable = false;
+        //        this.saTools[1].size = { w: 100, h: 100 };
+        //
+        //        this.saTools.push({ _id: 2 });
+        //        this.saTools[2].saImage = this.saToolsImages[2];
+        //        this.saTools[2].name = 'DataBase';
+        //        this.saTools[2].resizable = false;
+        //        this.saTools[2].size = { w: 100, h: 100 };
+        //create plugins
+        if (this.plugins.length) {
+            for (var i = 0; i < this.plugins.length; i++) {
+                var plug = this.plugins[i];
+                this.saTools.push({ _id: i });
+                this.saTools[i].plugin = plug;
+                this.saTools[i].saImage = this.saToolSprites[0];
+                this.saTools[i].name = plug.name;
+                this.saTools[i].resizable = true;
+                this.saTools[i].size = { w: 200, h: 250 };
+                this.saTools[i].size = { w: 200, h: 250 };
+                this.saTools[i].properties = [];
+                for (var j = 0; j < plug.clientParams.length; j++) {
+                    this.saTools[i].properties.push({
+                        name: plug.clientParams[j].name,
+                        type: plug.clientParams[j].type,
+                        param: plug.clientParams[j].param,
+                        object: name, nv: ''
+                    });
+                }
+            }
+        }
         var w = $("#drawBox").width();
         var h = $("#drawBox").height();
         this.renderer = this.saPixi.autoDetectRenderer(w, h, { antialias: true, transparent: false, resolution: 1 });
@@ -110,6 +161,10 @@ var CreateProjectPage = (function () {
         this.stage.addChild(this.connections);
         this.stage.mouseup = this.stageMouseUp;
         this.stage.mousemove = this.stageMouseMove;
+        var _this_ = this;
+        if (this.projectName !== undefined && this.projectName !== null) {
+            this.reload();
+        }
         this.saRender();
     };
     CreateProjectPage.prototype.stageZoom = function (e, d) {
@@ -219,7 +274,12 @@ var CreateProjectPage = (function () {
     CreateProjectPage.prototype.addObject = function (oobj) {
         // console.log(oobj);
         var obj = oobj.resizable ? this.getSpriteResizable(oobj.saImage, oobj.size.w, oobj.size.h) : this.getSprite(oobj.saImage);
-        obj.toolName = oobj.name;
+        if (oobj._id !== undefined) {
+            obj._id = oobj._id;
+        }
+        else {
+            obj._id = new Date().getMilliseconds();
+        }
         //initialize visible/private properties
         this.initializeProperties(obj, oobj);
         //initialize controls
@@ -240,6 +300,19 @@ var CreateProjectPage = (function () {
         // var inp = new _this_.saPixi.DOM.Sprite('<input type="text" placeholder="Name">',{x:10,y:10});
         // this.stage.addChild(inp);
         this.stage.addChild(obj);
+        if (!this.preloadProject) {
+            this.addObjToTopology(obj, oobj);
+        }
+        ;
+    };
+    CreateProjectPage.prototype.addObjToTopology = function (obj, oobj) {
+        var tobj = {
+            "id": obj._id,
+            "type": obj.type,
+            "plugin": oobj.plugin.plugin
+        };
+        this.updateTopologyProperties(tobj, obj);
+        this.topology.stages.push(tobj);
     };
     CreateProjectPage.prototype.showPropertiesEditor = function (obj) {
         this.saSelectedObject = obj;
@@ -264,8 +337,9 @@ var CreateProjectPage = (function () {
                 }
             }
             setTimeout(function () {
+                _this_.removeFromTopology(obj);
                 obj.destroy({ children: true });
-            }, 1000);
+            }, 100);
             // delete this;
             d.stopPropagation();
         };
@@ -282,7 +356,7 @@ var CreateProjectPage = (function () {
         };
         obj.addChild(edit);
         //initialize connection points
-        if (obj.toolName == 'DataBase') {
+        if (oobj.plugin.type == 'DATABASE' || oobj.plugin.type == 'STREAM_STAGE') {
             _this_.addConnectionHoles(obj, false, false, true, false);
         }
         else {
@@ -360,7 +434,6 @@ var CreateProjectPage = (function () {
         var _this_ = this;
         if (_this_.connectMode) {
             if (obj.parent._id == _this_._selectedHole.parent._id) {
-                console.log("same");
             }
             else {
                 _this_._tmpConnection.e = obj;
@@ -387,7 +460,7 @@ var CreateProjectPage = (function () {
         obj.position.x = 200 * Math.random();
         obj.position.y = 200;
         obj.interactive = true;
-        obj._id = new Date().getMilliseconds();
+        obj.name = oobj.plugin.name;
         //visible properties
         var _elementNum = 2;
         for (var _i = 0, _a = obj.properties; _i < _a.length; _i++) {
@@ -396,6 +469,12 @@ var CreateProjectPage = (function () {
             kn.x = -(obj.width / 2) + 20;
             kn.y = -(obj.height / 2) + (20 * _elementNum);
             var kv = new this.saPixi.Text(k.defaultValue, { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
+            if (this.projectName == "" || this.projectName == undefined || this.projectName == null) {
+                kv.text = k.defaultValue;
+            }
+            else {
+                kv.text = k.nv;
+            }
             kv.x = -(obj.width / 2) + 20 + kn.width + 20;
             kv.y = -(obj.height / 2) + (20 * _elementNum);
             obj.addChild(kn);
@@ -406,16 +485,37 @@ var CreateProjectPage = (function () {
         }
         //name
         var name = null;
-        name = new this.saPixi.Text(obj.toolName, { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
+        name = new this.saPixi.Text(obj.name, { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
         name.x = -(obj.width / 2) + 20;
         name.y = -(obj.height / 2) + 20;
-        obj.properties.push({ name: 'Name', type: 'text', object: name, nv: name.text });
+        //obj.properties.push({ name: 'Name', type: 'text', object: name, nv: name.text });
         obj.addChild(name);
     };
     CreateProjectPage.prototype.updateProperties = function () {
         for (var _i = 0, _a = this.saSelectedObject.properties; _i < _a.length; _i++) {
             var inp = _a[_i];
             inp.object.text = inp.nv;
+            for (var _b = 0, _c = this.topology.stages; _b < _c.length; _b++) {
+                var o = _c[_b];
+                if (o.id == this.saSelectedObject._id) {
+                    this.updateTopologyProperties(o, this.saSelectedObject);
+                }
+            }
+        }
+    };
+    CreateProjectPage.prototype.removeFromTopology = function (obj) {
+        for (var i = 0; i < this.topology.stages.length; i++) {
+            if (this.topology.stages[i].id == obj._id) {
+                this.topology.stages.splice(i, 1);
+                break;
+            }
+        }
+    };
+    CreateProjectPage.prototype.updateTopologyProperties = function (item, obj) {
+        item.metadata = {};
+        for (var _i = 0, _a = obj.properties; _i < _a.length; _i++) {
+            var p = _a[_i];
+            item.metadata[p.param] = p.nv;
         }
     };
     CreateProjectPage.prototype.highlightSelected = function () {
@@ -443,11 +543,55 @@ var CreateProjectPage = (function () {
         }
         _this_.dragMode = false;
     };
+    CreateProjectPage.prototype.save = function () {
+        this.http.post('api/projects/save', { project: this.topology }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (d) { console.log(d); }, function (e) { console.log(e); }, function (s) { console.log(s); });
+    };
+    CreateProjectPage.prototype.updateDrawableProperties = function (item, o, cb) {
+        for (var i = 0; i < o.properties.length; i++) {
+            o.properties[i].nv = item.metadata[o.properties[i].param];
+        }
+        cb(o);
+    };
+    CreateProjectPage.prototype.getTool = function (name) {
+        for (var i = 0; i < this.saTools.length; i++) {
+            if (name == this.saTools[i].plugin.name) {
+                return this.saTools[i];
+            }
+        }
+    };
+    CreateProjectPage.prototype.drawTopology = function (tp) {
+        var _this_ = this;
+        for (var i = 0; i < tp.stages.length; i++) {
+            var stg = tp.stages[i];
+            var oobj = JSON.parse(JSON.stringify(this.getTool(stg.plugin)));
+            oobj._id = stg.id;
+            if (oobj !== undefined && oobj !== null) {
+                this.updateDrawableProperties(stg, oobj, function (o) {
+                    _this_.addObject(o);
+                });
+            }
+        }
+    };
+    CreateProjectPage.prototype.reload = function () {
+        var _this = this;
+        //get the project json
+        this.http.post('/api/projects/json', { name: this.projectName }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+            _this.topology = p;
+            _this.topology.name = _this.projectName;
+            _this.preloadProject = true;
+            _this.drawTopology(_this.topology);
+            _this.preloadProject = false;
+        }, function (e) { console.log(e); }, function (s) { console.log(s); });
+    };
+    CreateProjectPage.__LOAD_ONCE_EDITOR = true;
     CreateProjectPage = __decorate([
         core_1.Component({
-            templateUrl: 'app/project/create-project.component.html'
+            templateUrl: 'app/project/create-project.component.html',
+            providers: [http_1.HTTP_PROVIDERS]
         }), 
-        __metadata('design:paramtypes', [])
+        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute])
     ], CreateProjectPage);
     return CreateProjectPage;
 }());

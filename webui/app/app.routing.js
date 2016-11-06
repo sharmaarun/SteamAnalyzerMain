@@ -17,16 +17,23 @@
 var router_1 = require('@angular/router');
 var home_component_1 = require('./home/home.component');
 var create_project_component_1 = require('./project/create-project.component');
+var list_projects_component_1 = require('./project/list-projects.component');
 var appRoutes = [
     {
-        path: 'home',
-        component: home_component_1.HomeComponent
-    }, {
-        path: 'project/create',
-        component: create_project_component_1.CreateProjectPage
-    }, {
         path: '',
         component: home_component_1.HomeComponent
+    }, {
+        path: 'editor',
+        component: create_project_component_1.CreateProjectPage
+    }, {
+        path: 'editor/:name',
+        component: create_project_component_1.CreateProjectPage
+    }, {
+        path: 'projects',
+        component: list_projects_component_1.ListProjectsPage
+    }, {
+        path: '**',
+        redirectTo: ''
     }
 ];
 exports.routing = router_1.RouterModule.forRoot(appRoutes);

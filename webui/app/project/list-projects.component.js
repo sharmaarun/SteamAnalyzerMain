@@ -24,25 +24,33 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
-var common_1 = require('@angular/common');
-var router_1 = require('@angular/router');
-var AppComponent = (function () {
-    function AppComponent(router) {
-        this.router = router;
-        this.title = 'THS';
-        if (requestedURL !== undefined && requestedURL !== "") {
-            this.router.navigate([requestedURL]);
-        }
+var http_1 = require("@angular/http");
+var ListProjectsPage = (function () {
+    function ListProjectsPage(http) {
+        var _this = this;
+        this.http = http;
+        this.title = "List Projects";
+        this.projects = [];
+        this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
+        //fetch projects 
+        http.get('/api/projects', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            console.log(_this.projects);
+            _this.projects = d;
+            console.log(_this.projects);
+        }, function (e) {
+            console.log("Cound not fetch projects list!");
+        }, function (s) {
+            console.log("Fetched Projects!");
+        });
     }
-    AppComponent = __decorate([
+    ListProjectsPage = __decorate([
         core_1.Component({
-            selector: 'my-app',
-            templateUrl: './app/app.component.html',
-            directives: [common_1.FORM_DIRECTIVES]
+            templateUrl: 'app/project/list-projects.component.html',
+            providers: [http_1.HTTP_PROVIDERS]
         }), 
-        __metadata('design:paramtypes', [router_1.Router])
-    ], AppComponent);
-    return AppComponent;
+        __metadata('design:paramtypes', [http_1.Http])
+    ], ListProjectsPage);
+    return ListProjectsPage;
 }());
-exports.AppComponent = AppComponent;
-//# sourceMappingURL=app.component.js.map
+exports.ListProjectsPage = ListProjectsPage;
+//# sourceMappingURL=list-projects.component.js.map

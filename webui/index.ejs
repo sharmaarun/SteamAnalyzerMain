@@ -1,0 +1,31 @@
+<html>
+    <head>
+        <base href="/">
+        <title>THS</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="./lib.css" rel="stylesheet">
+        <link href="./style.css" rel="stylesheet">
+        <script src="js/lib.js"></script>
+        <script src="systemjs.config.js"></script>
+        <script>
+            System.import('app').catch(function (err) {
+                console.error(err);
+            });
+        </script>
+
+    </head>
+
+    <body>
+        
+    <my-app>Loading...</my-app>
+    <script>
+        $.material.init();
+        var requestedURL = <%- JSON.stringify(requestedURL) %>;
+    </script>
+    <script src="js/app.js"></script>
+    <!--<script src="js/sadraw.js"></script>-->
+    <!--<script src="js/jsPlumb-2.1.5-min.js"></script>-->
+</body>
+
+</html>
+

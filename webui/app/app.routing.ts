@@ -18,17 +18,23 @@
 import {Routes, RouterModule } from '@angular/router';
 import { HomeComponent } from './home/home.component';
 import {CreateProjectPage} from './project/create-project.component';
-
+import {ListProjectsPage} from './project/list-projects.component';
 const appRoutes: Routes = [
     {
-        path: 'home',
-        component: HomeComponent
-    }, {
-        path:  'project/create',
-        component: CreateProjectPage
-    }, {
         path: '',
         component: HomeComponent
+    }, {
+        path:  'editor',
+        component: CreateProjectPage
+    },{
+        path:  'editor/:name',
+        component: CreateProjectPage
+    },{
+        path:  'projects',
+        component: ListProjectsPage
+    }, {
+        path: '**',
+        redirectTo: ''
     }
 ];
 

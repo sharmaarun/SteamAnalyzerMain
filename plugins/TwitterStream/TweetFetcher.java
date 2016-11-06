@@ -19,38 +19,45 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.sa.core;
+package com.sa.components.base;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.util.Base64;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.streaming.Seconds;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import java.util.List;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.streaming.api.java.JavaDStream;
+import twitter4j.Status;
 
 /**
- * Base class for all the stream I/O components
+ * This class serves as base for doing all the spark related operations on RDDs.
  * @author arunsharma
  */
-public abstract class StreamBase{
+public class TweetFetcher implements Serializable{
     
-    protected JavaSparkContext sc;
-    protected JavaStreamingContext tsc;
-    
-    
-    public abstract void start();
-    /**
-     * Read the object from Base64 string.
-     */
-    public static Object deserialize(String s) throws IOException,
-            ClassNotFoundException {
-        byte[] data = Base64.getDecoder().decode(s);
-        ObjectInputStream ois = new ObjectInputStream(
-                new ByteArrayInputStream(data));
-        Object o = ois.readObject();
-        ois.close();
-        return o;
+    public TweetFetcher() {
+        
     }
+    
+    //fetch the data/tweets into string stream array
+    public static void fetch(JavaDStream iStream, List output) {
+        JavaDStream<String> statuses = iStream.map(new Function<Status, String>() {
+            public String call(Status status) {
+                return status.getText();
+            }
+        });
+        
+        
+        //save each bunch into the specified buffer
+        //TODO: move to other function
+        statuses.foreachRDD(new VoidFunction<JavaRDD<String>>() {
+            @Override
+            public void call(JavaRDD<String> t1) {
+                System.out.println(t1.count());
+                output.add(t1);
+                return;
+            }
+        });
+    }
+    
 }

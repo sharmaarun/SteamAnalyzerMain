@@ -15,119 +15,187 @@
  */
 
 
- import {Component} from '@angular/core';
+import {Component} from '@angular/core';
+import {HTTP_PROVIDERS, Http, Response, Headers, RequestOptions} from "@angular/http";
+import {Observable} from "rxjs/Rx";
+import {ActivatedRoute} from '@angular/router';
 
- @Component({
-     templateUrl: 'app/project/create-project.component.html'
- })
+@Component({
+    templateUrl: 'app/project/create-project.component.html'
+     providers: [HTTP_PROVIDERS]
+})
 
- export class CreateProjectPage {
-     title = "Create Project"
-     saPixi;
-     renderer;
-     stage;
-     _zoomLevel=1;
-     bgColor;
+export class CreateProjectPage {
 
+    ngOnInit() {
+        this.route.params.subscribe(params => {
+            this.projectName = params['name']; // (+) converts string 'id' to a number
+            this.preloadProject = true;
+            // In a real app: dispatch action to load the details here.
+        });
+    }
+    projectName = "";
+    preloadProject = false;
+    title = "Create Project"
+    saPixi;
+    renderer;
+    stage;
+    _zoomLevel = 1;
+    bgColor;
 
+    static __LOAD_ONCE_EDITOR = true;
 
     // tools
     public saToolsImages = [
-    "app/images/panel.png",
-    "app/images/stream_point.png",
-    "app/images/db.png"
+        "app/images/panel.png",
+        "app/images/stream_point.png",
+        "app/images/db.png"
     ];
     public saControlsImages = [
-    "app/images/cross.png",
-    "app/images/edit.png",
-    "app/images/hole.png"
+        "app/images/cross.png",
+        "app/images/edit.png",
+        "app/images/hole.png"
     ];
     public saToolSprites = [
-    "app/images/panel.json"
+        "app/images/panel.json"
     ];
     public cross = {};
     public saTools = [];
     public saAllObjects = [];
     public saSelectedObject = {};
+    public plugins = [];
 
     //objects
-    connections=[];
+
+    topology = { name: 'Untitiled' + new Date().getMilliseconds(), stages: [], connections: [] };
+
+    connections = [];
     _tmpConnection;
     _selectedHole;
+
     //event flags
     dragMode = false;
     dragging = false;
     connectMode = false;
-    
-    public _this_;
 
-    public constructor() {
+    public _this_;
+    public headers = new Headers({ 'Content-Type': 'application/json' });
+    http;
+
+    public constructor(public _http: Http, public route: ActivatedRoute) {
         this._this_ = this;
         this.saPixi = PIXI;
         this.bgColor = 0xFFFFFF;
 
 
-        //load all th        e tools
+        //load all the tools
         //        for (var i = 0; i < this.saToolsImages.length;         i++) {
         //            var obj = new this.saPixi.Sprite(this.saPixi.Texture.fromImage(this.saToolsImages[i].        image))
         //            this.saTools.push({'name':this.saToolsImages[i].name, tool:         obj});
         //        }
 
-        this.saPixi.loader
-        .add(this.saToolsImages)
-        .add(this.saControlsImages)
-        .add(this.saToolSprites)
-        .load(this.saInit);
+        //setup topology
 
+        if (CreateProjectPage.__LOAD_ONCE_EDITOR) {
+            this.saPixi.loader
+                .add(this.saToolsImages)
+                .add(this.saControlsImages)
+                .add(this.saToolSprites)
+                .load(this.saInit);
 
-        var _this_ = this;
+        }
         setTimeout(function() {
             _this_.saSetup();
-
+            CreateProjectPage.__LOAD_ONCE_EDITOR = false;
         }, 1000);
+
+        var _this_ = this;
+        this.http = this._http;
+        //load plugins
+        this._http.get('api/plugins', this.headers).map(response => response.json())
+            .subscribe(p => { _this_.plugins = p; }, e => { console.log(e); }, s => { console.log(s); });
+
+
     }
+
+
 
     public saInit() {
-        var _this_ = this;
-        
+
+
     }
+
+    public showStage() {
+        console.log(this.stage);
+    }
+
     public saSetup() {
         //once all tool images loaded, start setup
-        this.saTools.push({_id:0});
-        this.saTools[0].saImage = this.saToolSprites[0];
-        this.saTools[0].name = 'Panel';
-        this.saTools[0].resizable = true;
-        this.saTools[0].size = {w:200,h:250};
-        this.saTools[0].size = {w:200,h:250};
-        this.saTools[0].properties = [
-        {name:'Type', type:'text',defaultValue: 'KEYWORD_SEARCH', object:name, nv:''},
-        {name:'Keyword', type:'text',defaultValue: '', object:name, nv:''},
-        ];
-        
-        this.saTools.push({_id:1});
-        this.saTools[1].saImage = this.saToolsImages[1];
-        this.saTools[1].name = 'StreamPoint';
-        this.saTools[1].resizable = false;
-        this.saTools[1].size = {w:100,h:100};
 
-        this.saTools.push({_id:2});
-        this.saTools[2].saImage = this.saToolsImages[2];
-        this.saTools[2].name = 'DataBase';
-        this.saTools[2].resizable = false;
-        this.saTools[2].size = {w:100,h:100};
-        
-        
+        //        this.saTools.push({ _id: 0 });
+        //        this.saTools[0].saImage = this.saToolSprites[0];
+        //        this.saTools[0].name = 'Panel';
+        //        this.saTools[0].resizable = true;
+        //        this.saTools[0].size = { w: 200, h: 250 };
+        //        this.saTools[0].size = { w: 200, h: 250 };
+        //        this.saTools[0].properties = [
+        //            { name: 'Type', type: 'text', defaultValue: 'KEYWORD_SEARCH', object: name, nv: '' },
+        //            { name: 'Keyword', type: 'text', defaultValue: '', object: name, nv: '' },
+        //        ];
+        //
+        //        this.saTools.push({ _id: 1 });
+        //        this.saTools[1].saImage = this.saToolsImages[1];
+        //        this.saTools[1].name = 'StreamPoint';
+        //        this.saTools[1].resizable = false;
+        //        this.saTools[1].size = { w: 100, h: 100 };
+        //
+        //        this.saTools.push({ _id: 2 });
+        //        this.saTools[2].saImage = this.saToolsImages[2];
+        //        this.saTools[2].name = 'DataBase';
+        //        this.saTools[2].resizable = false;
+        //        this.saTools[2].size = { w: 100, h: 100 };
+
+
+        //create plugins
+        if (this.plugins.length) {
+            for (var i = 0; i < this.plugins.length; i++) {
+                var plug = this.plugins[i];
+                this.saTools.push({ _id: i });
+                this.saTools[i].plugin = plug;
+                this.saTools[i].saImage = this.saToolSprites[0];
+                this.saTools[i].name = plug.name;
+                this.saTools[i].resizable = true;
+                this.saTools[i].size = { w: 200, h: 250 };
+                this.saTools[i].size = { w: 200, h: 250 };
+                this.saTools[i].properties = [];
+                for (var j = 0; j < plug.clientParams.length; j++) {
+                    this.saTools[i].properties.push({
+                        name: plug.clientParams[j].name,
+                        type: plug.clientParams[j].type,
+                        param: plug.clientParams[j].param,
+                        object: name, nv: ''
+                    });
+                }
+                //                this.saTools[0].properties = [
+                //                    { name: 'Type', type: 'text', defaultValue: 'KEYWORD_SEARCH', object: name, nv: '' },
+                //                    { name: 'Keyword', type: 'text', defaultValue: '', object: name, nv: '' },
+                //                ];
+            }
+        }
+
+
+
         var w = $("#drawBox").width();
         var h = $("#drawBox").height();
         this.renderer = this.saPixi.autoDetectRenderer(w, h, { antialias: true, transparent: false, resolution: 1 });
         document.getElementById("drawBox").appendChild(this.renderer.view);
-        $("#drawBox").bind('mousewheel',this.stageZoom);
+        $("#drawBox").bind('mousewheel', this.stageZoom);
         // this.saPixi.DOM.Setup(this.renderer,true);
         this.stage = new this.saPixi.Container();
 
 
         this.connections = new this.saPixi.Graphics();
-        this.connections.points=[];
+        this.connections.points = [];
         // this.connections.points.push({x1:0,y1:0,x2:100,y2:100});
         // this.connections.points.push({x:100,y:100});
         // this.connections.push(gfx);
@@ -135,42 +203,47 @@
         this.stage.addChild(this.connections);
         this.stage.mouseup = this.stageMouseUp;
         this.stage.mousemove = this.stageMouseMove;
+
+        var _this_ = this;
+        if (this.projectName !== undefined && this.projectName !== null) {
+            this.reload();
+        }
         this.saRender();
 
 
     }
 
-    private stageZoom(e,d) {
+    private stageZoom(e, d) {
         console.log(e);
-        this._zoomLevel+=(e.originalEvent.wheelDelta/100);
+        this._zoomLevel += (e.originalEvent.wheelDelta / 100);
         return false;
     }
 
     private stageMouseUp(d) {
-        if(this.connectMode) {
-            this.connectMode=false;
+        if (this.connectMode) {
+            this.connectMode = false;
             this._tmpConnection = undefined;
         }
     }
 
     private stageMouseMove(d) {
         console.log("moving");
-        
+
     }
-    
+
     public getSprite(path) {
         var obj = new this.saPixi.Sprite(
             this.saPixi.loader.resources[path].texture
-            );
-        obj.anchor.x=0.5;
-        obj.anchor.y=0.5;
+        );
+        obj.anchor.x = 0.5;
+        obj.anchor.y = 0.5;
         return obj;
     }
 
-    public getSpriteResizable(path,_w,_h) {
+    public getSpriteResizable(path, _w, _h) {
         var parent = new this.saPixi.Container();
-        parent.width=_w;
-        parent.height=_h;
+        parent.width = _w;
+        parent.height = _h;
         parent.tl = new this.saPixi.Sprite.fromFrame("tl");
         parent.tm = new this.saPixi.Sprite.fromFrame("tm");
         parent.tr = new this.saPixi.Sprite.fromFrame("tr");
@@ -180,139 +253,160 @@
         parent.bl = new this.saPixi.Sprite.fromFrame("bl");
         parent.bm = new this.saPixi.Sprite.fromFrame("bm");
         parent.br = new this.saPixi.Sprite.fromFrame("br");
-        parent.tl.anchor.x=parent.tm.anchor.x=parent.tr.anchor.x=parent.ml.anchor.x=parent.mm.anchor.x=parent.mr.anchor.x=parent.bl.anchor.x=parent.bm.anchor.x=parent.br.anchor.x=0.5;
-        parent.tl.anchor.y=parent.tm.anchor.y=parent.tr.anchor.y=parent.ml.anchor.y=parent.mm.anchor.y=parent.mr.anchor.y=parent.bl.anchor.y=parent.bm.anchor.y=parent.br.anchor.y=0.5;
+        parent.tl.anchor.x = parent.tm.anchor.x = parent.tr.anchor.x = parent.ml.anchor.x = parent.mm.anchor.x = parent.mr.anchor.x = parent.bl.anchor.x = parent.bm.anchor.x = parent.br.anchor.x = 0.5;
+        parent.tl.anchor.y = parent.tm.anchor.y = parent.tr.anchor.y = parent.ml.anchor.y = parent.mm.anchor.y = parent.mr.anchor.y = parent.bl.anchor.y = parent.bm.anchor.y = parent.br.anchor.y = 0.5;
         // parent.pivot.x=0.5;
         // parent.pivot.y=0.5;
-        parent.addChild(parent.tl);parent.addChild(parent.tm);parent.addChild(parent.tr);
-        parent.addChild(parent.ml);parent.addChild(parent.mm);parent.addChild(parent.mr);
-        parent.addChild(parent.bl);parent.addChild(parent.bm);parent.addChild(parent.br);
+        parent.addChild(parent.tl); parent.addChild(parent.tm); parent.addChild(parent.tr);
+        parent.addChild(parent.ml); parent.addChild(parent.mm); parent.addChild(parent.mr);
+        parent.addChild(parent.bl); parent.addChild(parent.bm); parent.addChild(parent.br);
         // console.log(tl.height);
         // 
         // tl.x=0;tl.y=0;
         // ml.x=0;
-        parent.tl.x=parent.ml.x=parent.bl.x=-(_w/2) + (parent.tl.width/2);
-        parent.tl.y=parent.tm.y=parent.tr.y=-(_h/2) + (parent.tl.height/2);
-        parent.ml.y=parent.mm.y=parent.mr.y=0;
-        parent.bl.y=parent.bm.y=parent.br.y=(_h/2) - (parent.bl.height/2);
-        parent.tm.x=parent.mm.x=parent.bm.x=0;
-        parent.tr.x=parent.mr.x=parent.br.x=(_w/2) - (parent.tr.width/2);
+        parent.tl.x = parent.ml.x = parent.bl.x = -(_w / 2) + (parent.tl.width / 2);
+        parent.tl.y = parent.tm.y = parent.tr.y = -(_h / 2) + (parent.tl.height / 2);
+        parent.ml.y = parent.mm.y = parent.mr.y = 0;
+        parent.bl.y = parent.bm.y = parent.br.y = (_h / 2) - (parent.bl.height / 2);
+        parent.tm.x = parent.mm.x = parent.bm.x = 0;
+        parent.tr.x = parent.mr.x = parent.br.x = (_w / 2) - (parent.tr.width / 2);
 
-        parent.ml.height = parent.mm.height= parent.mr.height = _h - (parent.ml.height*2);
-        parent.tm.width = parent.mm.width = parent.bm.width = _w - (parent.tl.width*2);
-        parent._resizable=true;
+        parent.ml.height = parent.mm.height = parent.mr.height = _h - (parent.ml.height * 2);
+        parent.tm.width = parent.mm.width = parent.bm.width = _w - (parent.tl.width * 2);
+        parent._resizable = true;
         return parent;
     }
-    
+
+
+
     public saUpdate() {
         //update connection curves
         this.connections.clear();
-        for(let p of this.connections.points) {
+        for (let p of this.connections.points) {
             // p.clear();
-            this.connections.lineStyle(4,0x000000,1);
-            var ex = p.e.worldTransform.tx, ey=p.e.worldTransform.ty;
+            this.connections.lineStyle(4, 0x000000, 1);
+            var ex = p.e.worldTransform.tx, ey = p.e.worldTransform.ty;
             var sx = p.s.worldTransform.tx, sy = p.s.worldTransform.ty;
-            this.connections.moveTo(sx,sy);
-            this.connections.bezierCurveTo(sx+50,sy+50,ex-50,ey,ex,ey);
+            this.connections.moveTo(sx, sy);
+            this.connections.bezierCurveTo(sx + 50, sy + 50, ex - 50, ey, ex, ey);
         }
 
-        if(this._tmpConnection!=undefined) {
-            this.connections.lineStyle(4,0xCCCCCC,0.5);
-            var ex = this._tmpConnection.e.worldTransform.tx, ey=this._tmpConnection.e.worldTransform.ty;
+        if (this._tmpConnection != undefined) {
+            this.connections.lineStyle(4, 0xCCCCCC, 0.5);
+            var ex = this._tmpConnection.e.worldTransform.tx, ey = this._tmpConnection.e.worldTransform.ty;
             var sx = this._tmpConnection.s.worldTransform.tx, sy = this._tmpConnection.s.worldTransform.ty;
-            this.connections.moveTo(sx,sy);
-            this.connections.bezierCurveTo(sx+50,sy+50,ex-50,ey,ex,ey);
+            this.connections.moveTo(sx, sy);
+            this.connections.bezierCurveTo(sx + 50, sy + 50, ex - 50, ey, ex, ey);
         }
 
 
 
         //logic
         //zoom logic
-        this.stage.scale.x=this.stage.scale.y=this._zoomLevel;
+        this.stage.scale.x = this.stage.scale.y = this._zoomLevel;
 
         //connection point logic
-        if(this.connectMode) {
-            if(this._tmpConnection!=undefined) {
+        if (this.connectMode) {
+            if (this._tmpConnection != undefined) {
                 this._tmpConnection.e.worldTransform.tx = this.renderer.plugins.interaction.mouse.global.x;
                 this._tmpConnection.e.worldTransform.ty = this.renderer.plugins.interaction.mouse.global.y;
             } else {
-                this._tmpConnection = {s:this._selectedHole,e:{worldTransform:{tx:0,ty:0}}};
+                this._tmpConnection = { s: this._selectedHole, e: { worldTransform: { tx: 0, ty: 0 } } };
                 // console.log(this._selectedHole.worldTransform);
             }
         }
 
     }
-    
-    
+
+
 
     public saRender() {
         var _this_ = this;
-        requestAnimationFrame(function(){_this_.saRender();});
+        requestAnimationFrame(function() { _this_.saRender(); });
         //update logic
         this.saUpdate();
         this.renderer.backgroundColor = this.bgColor;
         this.renderer.render(this.stage);
     }
-    
-    public addConnection(source,target) {
+
+    public addConnection(source, target) {
 
     }
 
 
     public addObject(oobj) {
         // console.log(oobj);
-        var obj = oobj.resizable?this.getSpriteResizable(oobj.saImage,oobj.size.w,oobj.size.h):this.getSprite(oobj.saImage);
-        obj.toolName = oobj.name;
+        var obj = oobj.resizable ? this.getSpriteResizable(oobj.saImage, oobj.size.w, oobj.size.h) : this.getSprite(oobj.saImage);
+        if(oobj._id!==undefined) {
+            obj._id = oobj._id;
+        } else {
+            obj._id = new Date().getMilliseconds();
+        }
         //initialize visible/private properties
-        this.initializeProperties(obj,oobj);
+        this.initializeProperties(obj, oobj);
         //initialize controls
-        this.initializeControls(obj,oobj);
+        this.initializeControls(obj, oobj);
 
         //setup event handler
-        var _this_ =this;
-        obj.mousedown = obj.touchstart = function(data){
+        var _this_ = this;
+        obj.mousedown = obj.touchstart = function(data) {
             _this_.onSelect(data);
         };
-        obj.mousemove = function(data){
-            _this_.onClickDrag(data,_this_);
+        obj.mousemove = function(data) {
+            _this_.onClickDrag(data, _this_);
         };;
-        obj.mouseup = function(data){
-            _this_.onMouseUp(data,_this_);
+        obj.mouseup = function(data) {
+            _this_.onMouseUp(data, _this_);
         };;
-        
+
         // var inp = new _this_.saPixi.DOM.Sprite('<input type="text" placeholder="Name">',{x:10,y:10});
         // this.stage.addChild(inp);
+        
         this.stage.addChild(obj);
+        if (!this.preloadProject) { this.addObjToTopology(obj, oobj) };
 
+
+    }
+
+    private addObjToTopology(obj, oobj) {
+        var tobj = {
+            "id": obj._id,
+            "type": obj.type,
+            "plugin": oobj.plugin.plugin
+        }
+        this.updateTopologyProperties(tobj, obj);
+        this.topology.stages.push(tobj);
     }
 
     private showPropertiesEditor(obj) {
         this.saSelectedObject = obj;
+        
         $("#propertiesEditor").modal("show");
     }
 
-    private initializeControls(obj,oobj) {
+    private initializeControls(obj, oobj) {
         //remove control
         var remove = this.getSprite("app/images/cross.png");
-        remove.x = (obj.width/2);
-        remove.y = -(obj.height/2)+10;
-        remove.interactive=true;
+        remove.x = (obj.width / 2);
+        remove.y = -(obj.height / 2) + 10;
+        remove.interactive = true;
         // console.log(remove);
         var _this_ = this;
-        remove.mousedown = function(d){
+        remove.mousedown = function(d) {
             _this_.stage.removeChild(obj);
             var p;
-            for(var i=0;i<_this_.connections.points.length;i++) {
+            for (var i = 0; i < _this_.connections.points.length; i++) {
                 p = _this_.connections.points[i];
-                if(p.s.parent._id==obj._id || p.e.parent._id==obj._id) {
-                    _this_.connections.points.splice(i,1);
+                if (p.s.parent._id == obj._id || p.e.parent._id == obj._id) {
+                    _this_.connections.points.splice(i, 1);
                     i--;
                 }
             }
-            setTimeout(function(){
-            obj.destroy({children:true});    
-            },1000);
-            
+            setTimeout(function() {
+                _this_.removeFromTopology(obj);
+                obj.destroy({ children: true });
+            }, 100);
+
             // delete this;
             d.stopPropagation();
         };
@@ -320,142 +414,147 @@
 
         //edit control
         var edit = this.getSprite("app/images/edit.png");
-        edit.x = (obj.width/2) - 20;
-        edit.y = -(obj.height/2) + 10;
-        edit.interactive=true;
+        edit.x = (obj.width / 2) - 20;
+        edit.y = -(obj.height / 2) + 10;
+        edit.interactive = true;
         // console.log(remove);
-        
-        edit.mousedown = function(d){
+
+        edit.mousedown = function(d) {
             _this_.showPropertiesEditor(obj);
             d.stopPropagation();
         };
         obj.addChild(edit);
 
         //initialize connection points
-        if(obj.toolName=='DataBase') {
-            _this_.addConnectionHoles(obj,false,false,true,false);
+        if (oobj.plugin.type == 'DATABASE' || oobj.plugin.type == 'STREAM_STAGE') {
+            _this_.addConnectionHoles(obj, false, false, true, false);
         } else {
-            _this_.addConnectionHoles(obj,false,true,false,true);
+            _this_.addConnectionHoles(obj, false, true, false, true);
         }
-        
-    }
 
-    private addConnectionHoles(obj,top,right,bottom,left) {
+    }
+    
+    
+    private addConnectionHoles(obj, top, right, bottom, left) {
         var _this_ = this;
-        if(left){
+        if (left) {
             //hole-l control
             var lhole = this.getSprite("app/images/hole.png");
-            lhole.anchor.x=0.5;
-            lhole.anchor.y=0.5;
-            lhole.x =  -(obj.width/2);
+            lhole.anchor.x = 0.5;
+            lhole.anchor.y = 0.5;
+            lhole.x = -(obj.width / 2);
             lhole.y = 0;
-            lhole.interactive=true;
-            lhole.mouseup = function(d){
-                _this_.chMouseUp(d,lhole);
+            lhole.interactive = true;
+            lhole.mouseup = function(d) {
+                _this_.chMouseUp(d, lhole);
             };
             lhole.mousedown = function(d) {
-                _this_.chMouseDown(d,lhole);
+                _this_.chMouseDown(d, lhole);
             }
             obj.addChild(lhole);
         }
-        if(right){
+        if (right) {
             //hole-r control
             var rhole = this.getSprite("app/images/hole.png");
-            rhole.anchor.x=0.5;
-            rhole.anchor.y=0.5;
-            rhole.x =  (obj.width/2);
+            rhole.anchor.x = 0.5;
+            rhole.anchor.y = 0.5;
+            rhole.x = (obj.width / 2);
             rhole.y = 0;
-            rhole.interactive=true;
-            rhole.mouseup = function(d){
-                _this_.chMouseUp(d,rhole);
+            rhole.interactive = true;
+            rhole.mouseup = function(d) {
+                _this_.chMouseUp(d, rhole);
             };
             rhole.mousedown = function(d) {
-                _this_.chMouseDown(d,rhole);
+                _this_.chMouseDown(d, rhole);
             }
             obj.addChild(rhole);
-        } if(bottom) {
+        } if (bottom) {
             //hole-r control
             var bhole = this.getSprite("app/images/hole.png");
-            bhole.anchor.x=0.5;
-            bhole.anchor.y=0.5;
-            bhole.x =  0;
-            bhole.y = obj.height/2;
-            bhole.interactive=true;
-            bhole.mouseup = function(d){
-                _this_.chMouseUp(d,bhole);
+            bhole.anchor.x = 0.5;
+            bhole.anchor.y = 0.5;
+            bhole.x = 0;
+            bhole.y = obj.height / 2;
+            bhole.interactive = true;
+            bhole.mouseup = function(d) {
+                _this_.chMouseUp(d, bhole);
             };
             bhole.mousedown = function(d) {
-                _this_.chMouseDown(d,bhole);
+                _this_.chMouseDown(d, bhole);
             }
             obj.addChild(bhole);
         }
-        if(top) {
+        if (top) {
             //hole-r control
             var bhole = this.getSprite("app/images/hole.png");
-            bhole.anchor.x=0.5;
-            bhole.anchor.y=0.5;
-            bhole.x =  0;
-            bhole.y = -obj.height/2;
-            bhole.interactive=true;
-            bhole.mouseup = function(d){
-                _this_.chMouseUp(d,bhole);
+            bhole.anchor.x = 0.5;
+            bhole.anchor.y = 0.5;
+            bhole.x = 0;
+            bhole.y = -obj.height / 2;
+            bhole.interactive = true;
+            bhole.mouseup = function(d) {
+                _this_.chMouseUp(d, bhole);
             };
             bhole.mousedown = function(d) {
-                _this_.chMouseDown(d,bhole);
+                _this_.chMouseDown(d, bhole);
             }
             obj.addChild(bhole);
         }
     }
 
-    private chMouseUp(d,obj) {
+    private chMouseUp(d, obj) {
         var _this_ = this;
-        if(_this_.connectMode){
-                if(obj.parent._id==_this_._selectedHole.parent._id) {
-                    console.log("same");
-                } else {
-                    _this_._tmpConnection.e=obj;
-                    _this_.connections.points.push(_this_._tmpConnection);
-                    _this_._tmpConnection = undefined;
-                    _this_.connectMode=false;
-                }
+        if (_this_.connectMode) {
+            if (obj.parent._id == _this_._selectedHole.parent._id) {
+                
             } else {
-                _this_.connectMode=true;
-                _this_._selectedHole = obj;
+                _this_._tmpConnection.e = obj;
+                _this_.connections.points.push(_this_._tmpConnection);
+                _this_._tmpConnection = undefined;
+                _this_.connectMode = false;
             }
-            d.stopPropagation();
-    }
-
-    private chMouseDown(d,obj) {
+        } else {
+            _this_.connectMode = true;
+            _this_._selectedHole = obj;
+        }
         d.stopPropagation();
     }
 
-    private initializeProperties(obj,oobj) {
+    private chMouseDown(d, obj) {
+        d.stopPropagation();
+    }
+
+    private initializeProperties(obj, oobj) {
         //subcomponent propeties
         //set default properties
         // obj.anchor.x = 0.5;
         // obj.anchor.y = 0.5;
-        obj.properties=oobj.properties==undefined?[]:oobj.properties;
+        obj.properties = oobj.properties == undefined ? [] : oobj.properties;
         obj.position.x = 200 * Math.random();
         obj.position.y = 200;
         obj.interactive = true;
-        obj._id = new Date().getMilliseconds();
+        
+        obj.name = oobj.plugin.name;
         //visible properties
         
+        var _elementNum = 2;
+        for (var k of obj.properties) {
+            var kn = new this.saPixi.Text(k.name + ": ", { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
 
-        var _elementNum=2;
-        for(var k of obj.properties) {
-            var kn = new this.saPixi.Text(k.name+": ",{fontFamily : 'Arial', fontSize: 12, fill : 0xFFFFFF, align : 'left', wordWrap:true});
-
-            kn.x=-(obj.width/2) + 20;
-            kn.y=-(obj.height/2) + (20*_elementNum);
-
-            var kv = new this.saPixi.Text(k.defaultValue,{fontFamily : 'Arial', fontSize: 12, fill : 0xFFFFFF, align : 'left', wordWrap:true});
-
-            kv.x=-(obj.width/2) + 20 + kn.width+20;
-            kv.y=-(obj.height/2) + (20*_elementNum);
+            kn.x = -(obj.width / 2) + 20;
+            kn.y = -(obj.height / 2) + (20 * _elementNum);
+            var kv = new this.saPixi.Text( k.defaultValue, { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
+            if (this.projectName == "" || this.projectName == undefined || this.projectName == null) {
+                 kv.text = k.defaultValue;
+            }
+            else{
+                kv.text = k.nv;
+            }
+            kv.x = -(obj.width / 2) + 20 + kn.width + 20;
+            kv.y = -(obj.height / 2) + (20 * _elementNum);
             obj.addChild(kn);
             obj.addChild(kv);
-            _elementNum+=1;
+            _elementNum += 1;
 
             k.object = kv;
             k.nv = kv.text;
@@ -463,49 +562,132 @@
 
         //name
         var name = null;
-        name = new this.saPixi.Text(obj.toolName,{fontFamily : 'Arial', fontSize: 12, fill : 0xFFFFFF, align : 'left', wordWrap:true});
-        
-            name.x=-(obj.width/2) + 20;
-            name.y=-(obj.height/2) + 20;
+        name = new this.saPixi.Text(obj.name, { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
 
-        obj.properties.push({name:'Name', type:'text', object:name, nv:name.text});
+        name.x = -(obj.width / 2) + 20;
+        name.y = -(obj.height / 2) + 20;
+
+        //obj.properties.push({ name: 'Name', type: 'text', object: name, nv: name.text });
         obj.addChild(name);
     }
 
     public updateProperties() {
-        for(let inp of this.saSelectedObject.properties) {
-            inp.object.text=inp.nv;
+        
+        for (let inp of this.saSelectedObject.properties) {
+            inp.object.text = inp.nv;
+            for (let o of this.topology.stages) {
+                if (o.id == this.saSelectedObject._id) {
+                    this.updateTopologyProperties(o, this.saSelectedObject);
+                }
+            }
+        }
+        
+    }
+    
+    public removeFromTopology(obj) {
+        for(var i=0;i<this.topology.stages.length;i++) {
+            if(this.topology.stages[i].id==obj._id) {
+                this.topology.stages.splice(i,1);
+                break;
+            }
+        }
+        
+        
+    }
+
+    public updateTopologyProperties(item, obj) {
+        item.metadata = {};
+        for (let p of obj.properties) {
+            item.metadata[p.param] = p.nv;
         }
     }
 
     public highlightSelected() {
-        if(this.saSelectedObject!=undefined) {
+        if (this.saSelectedObject != undefined) {
 
         }
     }
-    
-    public onSelect(data){
+
+    public onSelect(data) {
         this.saSelectedObject = data.target;
         this.dragging = false;
         this.dragMode = true;
     }
-    
-    public onClickDrag(data,_this_) {
-        if(_this_.dragMode) {
+
+    public onClickDrag(data, _this_) {
+        if (_this_.dragMode) {
             _this_.saSelectedObject.transform.position._x = data.data.global.x;
             _this_.saSelectedObject.transform.position._y = data.data.global.y;
             _this_.dragging = true;
         }
     }
-    
-    public onMouseUp(data,_this_) {
-        if(!_this_.dragging) {
-            _this_.cross.visible=true;
+
+    public onMouseUp(data, _this_) {
+        if (!_this_.dragging) {
+            _this_.cross.visible = true;
         } else {
-            _this_.dragging=false;
+            _this_.dragging = false;
 
         }
         _this_.dragMode = false;
+    }
+
+    public save() {
+
+        this.http.post('api/projects/save', { project: this.topology }, this.headers).map(response => response.json())
+            .subscribe(d => { console.log(d); }, e => { console.log(e); }, s => { console.log(s); });
+
+
+    }
+
+    public updateDrawableProperties(item, o, cb) {
+        
+        for (var i = 0; i < o.properties.length; i++) {
+            o.properties[i].nv = item.metadata[o.properties[i].param];
+        }
+        
+        cb(o);
+    }
+
+    private getTool(name) {
+        for (var i = 0; i < this.saTools.length; i++) {
+            if (name == this.saTools[i].plugin.name) {
+                return this.saTools[i];
+            }
+        }
+    }
+
+    private drawTopology(tp) {
+        var _this_ = this;
+        for (var i = 0; i < tp.stages.length; i++) {
+            var stg = tp.stages[i];
+            var oobj = JSON.parse(JSON.stringify(this.getTool(stg.plugin)));
+            oobj._id = stg.id;
+            if (oobj !== undefined && oobj !== null) {
+                this.updateDrawableProperties(stg, oobj, function(o){
+                    
+                    _this_.addObject(o);
+                });
+               
+
+            }
+        }
+    }
+
+
+    public reload() {
+
+        //get the project json
+        this.http.post('/api/projects/json', { name: this.projectName }, this.headers).map(response => response.json())
+            .subscribe(p => {
+                this.topology = p;
+                this.topology.name = this.projectName;
+                this.preloadProject = true;
+                this.drawTopology(this.topology);
+                this.preloadProject = false;
+            }, e => { console.log(e); }, s => { console.log(s); });
+
+
     }
 
 }

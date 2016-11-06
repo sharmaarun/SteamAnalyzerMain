@@ -1,0 +1,21 @@
+{
+    "projects":{
+        "useHDFS": false,
+        "localPath":"/home/arunsharma/MS/research/THS/projects/test-twitter/projects"
+    },
+    "hadoop" : {
+        "path": "/home/hadoop/hadoop"
+    },
+    "template": {
+        "path": "/home/arunsharma/MS/research/THS/projects/test-twitter",
+        "name" : "core"
+    },
+    "hdfsConnectionParams": {
+        "user": "hadoop",
+        "namenode_host": "localhost",
+        "namenode_port": 50070
+    },
+    "plugins" : {
+        "path" : "/home/arunsharma/MS/research/THS/projects/test-twitter/plugins"
+    }
+}

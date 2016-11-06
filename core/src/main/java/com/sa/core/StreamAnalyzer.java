@@ -49,11 +49,11 @@ public class StreamAnalyzer {
      * Initializes the Stream Analyzation Engine as a Singleton
      * @return 
      */
-    public static StreamAnalyzer initializeStandalone() {
+    public static StreamAnalyzer initialize() {
         if (instance == null) {
             if (context == null) {
                 try {
-                    context = new JavaSparkContext("spark://192.168.64.128:8085", "DefaultApp" + UUID.randomUUID());
+                    context = new JavaSparkContext("spark://192.168.64.129:8085", "DefaultApp" + UUID.randomUUID());
                 } catch (Exception ex) {
                     logger.error("Error while initializing spark context : ",ex);
                     return null;

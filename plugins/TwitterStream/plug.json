@@ -1,0 +1,30 @@
+{
+	"name":"TwitterStream",
+	"_v":"1.0.0",
+	"type":"STREAM_STAGE",
+	"plugin":"TwitterStream",
+	"className":"TwitterStreamProvider",
+	"fqpn":"com.sa.components.base",
+	"clientParams":[
+	{
+		"type":"text",
+		"name":"Consumer Key",
+		"param":"consumer_key"
+		},
+{
+                "type":"text",
+                "name":"Consumer Secret",
+                "param":"consumer_secret"
+                },
+{
+                "type":"text",
+                "name":"Access Token",
+                "param":"access_token"
+                },
+{
+                "type":"text",
+                "name":"Access Token Secret",
+                "param":"access_token_secret"
+                }
+	]
+}

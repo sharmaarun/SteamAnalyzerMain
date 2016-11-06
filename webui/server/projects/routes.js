@@ -14,25 +14,11 @@
  * limitations under the License.
  */
 
-
-import {Component} from '@angular/core';
-import { FORM_DIRECTIVES } from '@angular/common';
-import {Router} from '@angular/router';
-
-@Component({
-    selector : 'my-app',
-    templateUrl: './app/app.component.html',
-    directives: [FORM_DIRECTIVES]
-})
-
-export class AppComponent {
-    title = 'THS';
-    constructor(public router:Router) {
-        
-        if(requestedURL!==undefined && requestedURL!=="") {
-            this.router.navigate([requestedURL]);
-        }
-            
-    }
+module.exports = function(passport) {
+    
+    var controller = require('./controller')(passport);
+    app.get('/api/projects',controller.list);
+    app.post('/api/projects/json',controller.getJSON);
+    app.post('/api/projects/save', controller.saveProject);
     
 }

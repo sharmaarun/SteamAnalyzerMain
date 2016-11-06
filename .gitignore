@@ -3,3 +3,4 @@
 npm-debug.log
 /core/target/
 /compiler/target/
+/projects

@@ -18,12 +18,15 @@
 import { NgModule }      from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { routing } from './app.routing';
+import { HttpModule } from '@angular/http';
 import { AppComponent }  from './app.component';
 import { HomeComponent } from  './home/home.component';
+import { CreateProjectPage } from  './project/create-project.component';
+import { ListProjectsPage } from  './project/list-projects.component';
 
 @NgModule({
-    imports: [BrowserModule, routing],
-    declarations: [AppComponent, HomeComponent],
+    imports: [BrowserModule, routing, HttpModule],
+    declarations: [AppComponent, HomeComponent, CreateProjectPage, ListProjectsPage],
     bootstrap: [AppComponent]
 })
 export class AppModule { }
