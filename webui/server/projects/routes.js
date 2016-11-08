@@ -20,5 +20,6 @@ module.exports = function(passport) {
     app.get('/api/projects',controller.list);
     app.post('/api/projects/json',controller.getJSON);
     app.post('/api/projects/save', controller.saveProject);
+    app.post('/api/projects/compile', controller.compileProject);
     
 }

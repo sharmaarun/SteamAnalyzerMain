@@ -8,7 +8,7 @@
     },
     "template": {
         "path": "/home/arunsharma/MS/research/THS/projects/test-twitter",
-        "name" : "core"
+        "name" : "core_copy"
     },
     "hdfsConnectionParams": {
         "user": "hadoop",
@@ -17,5 +17,9 @@
     },
     "plugins" : {
         "path" : "/home/arunsharma/MS/research/THS/projects/test-twitter/plugins"
+    },
+    "compiler" : {
+        "path" : "/home/arunsharma/MS/research/THS/projects/test-twitter/compiler/target",
+        "executable" : "compiler-1.0-SNAPSHOT-jar-with-dependencies.jar"
     }
 }

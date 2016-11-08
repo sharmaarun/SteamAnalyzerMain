@@ -61,13 +61,39 @@ exports.getJSON = function (req, res) {
         return res.status(400).send({status: "ERROR", msg: "Invalid Project Name/ Project not found!"});
     }
     try {
-        return res.json(fs.readJSON(app.conf.projects.localPath + "/" + req.body.name+"/topology.json"));
+        return res.json(fs.readJSON(app.conf.projects.localPath + "/" + req.body.name + "/topology.json"));
     } catch (e) {
         console.log(e);
         return res.status(500).send({status: "ERROR", msg: "Server Error!"});
     }
 
 }
+
+
+exports.compileProject = function (req, res) {
+    if (req.body.name == undefined || req.body.name == null) {
+        return res.status(400).send({status: "ERROR", msg: "Invalid Project Name/ Project not found!"});
+    }
+    try {
+
+        //pass the project full path+name to compiler
+        var compile = new fs.run_cmd("java",
+                ["-jar",
+                    app.conf.compiler.path + "/" + app.conf.compiler.executable,
+                    "VERBOSE", "--variable:pluginsPath=" + app.conf.plugins.path, "COMPILE", app.conf.projects.localPath + "/" + req.body.name,
+                    app.conf.projects.localPath + "/" + req.body.name]);
+        
+        return res.json({status:"OK",msg:"Command Executed!",output:compile.stdout.toString(),error:compile.stderr.toString()});
+        
+        
+
+    } catch (e) {
+        console.log(e);
+        return res.status(500).send({status: "ERROR", msg: "Server Error!"});
+    }
+
+}
+
 
 module.exports = function (_passport) {
     passport = _passport;

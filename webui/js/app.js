@@ -122,6 +122,9 @@ var appRoutes = [
         path: 'editor',
         component: create_project_component_1.CreateProjectPage
     }, {
+        path: 'editor/:name',
+        component: create_project_component_1.CreateProjectPage
+    }, {
         path: 'projects',
         component: list_projects_component_1.ListProjectsPage
     }, {
@@ -131,6 +134,74 @@ var appRoutes = [
 ];
 exports.routing = router_1.RouterModule.forRoot(appRoutes);
 //# sourceMappingURL=app.routing.js.map;
+/*
+ * Copyright 2016 arunsharma.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var core_1 = require('@angular/core');
+var Commons = (function () {
+    function Commons() {
+    }
+    Commons.loaderShow = function () {
+        console.log("in loaershow");
+        var loader = document.getElementById("loaderComponent");
+        loader.style.display = "block";
+        var ldt = document.getElementById("loaderDoneText");
+        ldt.style.display = "none";
+        var li = document.getElementById("loaderIcon");
+        li.style.display = "block";
+    };
+    Commons.loaderDone = function (msg) {
+        clearTimeout(Commons.loaderTimer);
+        var ldt = document.getElementById("loaderDoneText");
+        ldt.style.display = "block";
+        var li = document.getElementById("loaderIcon");
+        li.style.display = "none";
+        if (msg !== undefined) {
+            alert(msg);
+        }
+        Commons.loaderTimer = setTimeout(function () {
+            var loader = document.getElementById("loaderComponent");
+            loader.style.display = "none";
+            var ldt = document.getElementById("loaderDoneText");
+            ldt.style.display = "none";
+            var li = document.getElementById("loaderIcon");
+            li.style.display = "none";
+        }, 3000);
+    };
+    Commons.loaderError = function (output) {
+        alert(output);
+    };
+    Commons.loaderTimer = -1;
+    Commons = __decorate([
+        core_1.Injectable(), 
+        __metadata('design:paramtypes', [])
+    ], Commons);
+    return Commons;
+}());
+exports.Commons = Commons;
+//# sourceMappingURL=commons.component.js.map;
 /*
  * Copyright 2016 arunsharma.
  *
@@ -338,9 +409,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 var core_1 = require('@angular/core');
 var http_1 = require("@angular/http");
+var router_1 = require('@angular/router');
+var commons_component_1 = require('../home/commons.component');
 var CreateProjectPage = (function () {
-    function CreateProjectPage(_http) {
+    function CreateProjectPage(_http, route) {
         this._http = _http;
+        this.route = route;
+        this.projectName = "";
+        this.preloadProject = false;
         this.title = "Create Project";
         this._zoomLevel = 1;
         // tools
@@ -391,16 +467,20 @@ var CreateProjectPage = (function () {
             CreateProjectPage.__LOAD_ONCE_EDITOR = false;
         }, 1000);
         var _this_ = this;
-        this.http = _http;
+        this.http = this._http;
         //load plugins
-        _http.get('api/plugins', this.headers).map(function (response) { return response.json(); })
+        this._http.get('api/plugins', this.headers).map(function (response) { return response.json(); })
             .subscribe(function (p) { _this_.plugins = p; }, function (e) { console.log(e); }, function (s) { console.log(s); });
     }
+    CreateProjectPage.prototype.ngOnInit = function () {
+        var _this = this;
+        this.route.params.subscribe(function (params) {
+            _this.projectName = params['name']; // (+) converts string 'id' to a number
+            _this.preloadProject = true;
+            // In a real app: dispatch action to load the details here.
+        });
+    };
     CreateProjectPage.prototype.saInit = function () {
-        var _this_ = this;
-        //get the project json
-        this.http.get('api/project/json', this.headers).map(function (response) { return response.json(); })
-            .subscribe(function (p) { _this_.topology = p; console.log(p); }, function (e) { console.log(e); }, function (s) { console.log(s); });
     };
     CreateProjectPage.prototype.showStage = function () {
         console.log(this.stage);
@@ -466,6 +546,10 @@ var CreateProjectPage = (function () {
         this.stage.addChild(this.connections);
         this.stage.mouseup = this.stageMouseUp;
         this.stage.mousemove = this.stageMouseMove;
+        var _this_ = this;
+        if (this.projectName !== undefined && this.projectName !== null) {
+            this.reload();
+        }
         this.saRender();
     };
     CreateProjectPage.prototype.stageZoom = function (e, d) {
@@ -575,6 +659,12 @@ var CreateProjectPage = (function () {
     CreateProjectPage.prototype.addObject = function (oobj) {
         // console.log(oobj);
         var obj = oobj.resizable ? this.getSpriteResizable(oobj.saImage, oobj.size.w, oobj.size.h) : this.getSprite(oobj.saImage);
+        if (oobj._id !== undefined) {
+            obj._id = oobj._id;
+        }
+        else {
+            obj._id = new Date().getMilliseconds();
+        }
         //initialize visible/private properties
         this.initializeProperties(obj, oobj);
         //initialize controls
@@ -594,16 +684,16 @@ var CreateProjectPage = (function () {
         ;
         // var inp = new _this_.saPixi.DOM.Sprite('<input type="text" placeholder="Name">',{x:10,y:10});
         // this.stage.addChild(inp);
-        console.log(obj);
         this.stage.addChild(obj);
-        this.addObjToTopology(obj, oobj);
-        console.log("topo : ");
-        console.log(this.topology);
+        if (!this.preloadProject) {
+            this.addObjToTopology(obj, oobj);
+        }
+        ;
     };
     CreateProjectPage.prototype.addObjToTopology = function (obj, oobj) {
         var tobj = {
             "id": obj._id,
-            "type": obj.type,
+            "type": oobj.plugin.type,
             "plugin": oobj.plugin.plugin
         };
         this.updateTopologyProperties(tobj, obj);
@@ -632,8 +722,9 @@ var CreateProjectPage = (function () {
                 }
             }
             setTimeout(function () {
+                _this_.removeFromTopology(obj);
                 obj.destroy({ children: true });
-            }, 1000);
+            }, 100);
             // delete this;
             d.stopPropagation();
         };
@@ -728,7 +819,6 @@ var CreateProjectPage = (function () {
         var _this_ = this;
         if (_this_.connectMode) {
             if (obj.parent._id == _this_._selectedHole.parent._id) {
-                console.log("same");
             }
             else {
                 _this_._tmpConnection.e = obj;
@@ -755,7 +845,6 @@ var CreateProjectPage = (function () {
         obj.position.x = 200 * Math.random();
         obj.position.y = 200;
         obj.interactive = true;
-        obj._id = new Date().getMilliseconds();
         obj.name = oobj.plugin.name;
         //visible properties
         var _elementNum = 2;
@@ -765,6 +854,12 @@ var CreateProjectPage = (function () {
             kn.x = -(obj.width / 2) + 20;
             kn.y = -(obj.height / 2) + (20 * _elementNum);
             var kv = new this.saPixi.Text(k.defaultValue, { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
+            if (this.projectName == "" || this.projectName == undefined || this.projectName == null) {
+                kv.text = k.defaultValue;
+            }
+            else {
+                kv.text = k.nv;
+            }
             kv.x = -(obj.width / 2) + 20 + kn.width + 20;
             kv.y = -(obj.height / 2) + (20 * _elementNum);
             obj.addChild(kn);
@@ -792,7 +887,14 @@ var CreateProjectPage = (function () {
                 }
             }
         }
-        console.log(this.topology);
+    };
+    CreateProjectPage.prototype.removeFromTopology = function (obj) {
+        for (var i = 0; i < this.topology.stages.length; i++) {
+            if (this.topology.stages[i].id == obj._id) {
+                this.topology.stages.splice(i, 1);
+                break;
+            }
+        }
     };
     CreateProjectPage.prototype.updateTopologyProperties = function (item, obj) {
         item.metadata = {};
@@ -827,10 +929,68 @@ var CreateProjectPage = (function () {
         _this_.dragMode = false;
     };
     CreateProjectPage.prototype.save = function () {
+        commons_component_1.Commons.loaderShow();
+        //fill up fixed props
         this.http.post('api/projects/save', { project: this.topology }, this.headers).map(function (response) { return response.json(); })
-            .subscribe(function (d) { console.log(d); }, function (e) { console.log(e); }, function (s) { console.log(s); });
+            .subscribe(function (d) {
+            console.log(d);
+            commons_component_1.Commons.loaderDone();
+        }, function (e) { console.log(e); }, function (s) { console.log(s); });
+    };
+    CreateProjectPage.prototype.updateDrawableProperties = function (item, o, cb) {
+        for (var i = 0; i < o.properties.length; i++) {
+            o.properties[i].nv = item.metadata[o.properties[i].param];
+        }
+        cb(o);
+    };
+    CreateProjectPage.prototype.getTool = function (name) {
+        for (var i = 0; i < this.saTools.length; i++) {
+            if (name == this.saTools[i].plugin.name) {
+                return this.saTools[i];
+            }
+        }
+    };
+    CreateProjectPage.prototype.drawTopology = function (tp) {
+        var _this_ = this;
+        for (var i = 0; i < tp.stages.length; i++) {
+            var stg = tp.stages[i];
+            var oobj = JSON.parse(JSON.stringify(this.getTool(stg.plugin)));
+            oobj._id = stg.id;
+            if (oobj !== undefined && oobj !== null) {
+                this.updateDrawableProperties(stg, oobj, function (o) {
+                    _this_.addObject(o);
+                });
+            }
+        }
     };
     CreateProjectPage.prototype.reload = function () {
+        var _this = this;
+        //get the project json
+        this.http.post('/api/projects/json', { name: this.projectName }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+            _this.topology = p;
+            _this.topology.name = _this.projectName;
+            _this.preloadProject = true;
+            _this.drawTopology(_this.topology);
+            _this.preloadProject = false;
+        }, function (e) { console.log(e); }, function (s) { console.log(s); });
+    };
+    CreateProjectPage.prototype.compile = function () {
+        commons_component_1.Commons.loaderShow();
+        this.http.post('/api/projects/compile', { name: this.projectName }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+            if (p.output !== undefined && p.output !== null && p.output !== "") {
+                commons_component_1.Commons.loaderDone(p.output);
+            }
+            else if (p.error !== undefined && p.error !== null && p.error !== "") {
+                commons_component_1.Commons.loaderDone(p.error);
+            }
+            else {
+                commons_component_1.Commons.loaderDone(p.msg);
+            }
+        }, function (e) {
+            commons_component_1.Commons.loaderDone(e);
+        }, function (s) { console.log(s); });
     };
     CreateProjectPage.__LOAD_ONCE_EDITOR = true;
     CreateProjectPage = __decorate([
@@ -838,7 +998,7 @@ var CreateProjectPage = (function () {
             templateUrl: 'app/project/create-project.component.html',
             providers: [http_1.HTTP_PROVIDERS]
         }), 
-        __metadata('design:paramtypes', [http_1.Http])
+        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute])
     ], CreateProjectPage);
     return CreateProjectPage;
 }());

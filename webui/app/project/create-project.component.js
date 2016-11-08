@@ -26,6 +26,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var core_1 = require('@angular/core');
 var http_1 = require("@angular/http");
 var router_1 = require('@angular/router');
+var commons_component_1 = require('../home/commons.component');
 var CreateProjectPage = (function () {
     function CreateProjectPage(_http, route) {
         this._http = _http;
@@ -308,7 +309,7 @@ var CreateProjectPage = (function () {
     CreateProjectPage.prototype.addObjToTopology = function (obj, oobj) {
         var tobj = {
             "id": obj._id,
-            "type": obj.type,
+            "type": oobj.plugin.type,
             "plugin": oobj.plugin.plugin
         };
         this.updateTopologyProperties(tobj, obj);
@@ -544,8 +545,13 @@ var CreateProjectPage = (function () {
         _this_.dragMode = false;
     };
     CreateProjectPage.prototype.save = function () {
+        commons_component_1.Commons.loaderShow();
+        //fill up fixed props
         this.http.post('api/projects/save', { project: this.topology }, this.headers).map(function (response) { return response.json(); })
-            .subscribe(function (d) { console.log(d); }, function (e) { console.log(e); }, function (s) { console.log(s); });
+            .subscribe(function (d) {
+            console.log(d);
+            commons_component_1.Commons.loaderDone();
+        }, function (e) { console.log(e); }, function (s) { console.log(s); });
     };
     CreateProjectPage.prototype.updateDrawableProperties = function (item, o, cb) {
         for (var i = 0; i < o.properties.length; i++) {
@@ -584,6 +590,23 @@ var CreateProjectPage = (function () {
             _this.drawTopology(_this.topology);
             _this.preloadProject = false;
         }, function (e) { console.log(e); }, function (s) { console.log(s); });
+    };
+    CreateProjectPage.prototype.compile = function () {
+        commons_component_1.Commons.loaderShow();
+        this.http.post('/api/projects/compile', { name: this.projectName }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+            if (p.output !== undefined && p.output !== null && p.output !== "") {
+                commons_component_1.Commons.loaderDone(p.output);
+            }
+            else if (p.error !== undefined && p.error !== null && p.error !== "") {
+                commons_component_1.Commons.loaderDone(p.error);
+            }
+            else {
+                commons_component_1.Commons.loaderDone(p.msg);
+            }
+        }, function (e) {
+            commons_component_1.Commons.loaderDone(e);
+        }, function (s) { console.log(s); });
     };
     CreateProjectPage.__LOAD_ONCE_EDITOR = true;
     CreateProjectPage = __decorate([

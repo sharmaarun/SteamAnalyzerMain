@@ -19,29 +19,31 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.sa.examples;
+package com.sa.core.commons;
 
-import com.sa.components.base.TwitterStreamProvider;
-import com.sa.core.StreamAnalyzer;
-import java.util.concurrent.TimeUnit;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
+import com.sa.core.StreamBase;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- *
+ * This class handles connections between the stages.
+ * 
  * @author arunsharma
  */
-public class TweetsExample {
+public final class ConnectionManager {
     
-    public static void main(String args[]) {
-        
-        StreamAnalyzer sa = StreamAnalyzer.initializeStandalone();
-        JavaSparkContext sc = sa.getContext();
-        
-        TwitterStreamProvider tsp = new TwitterStreamProvider(sc);
-        
-        tsp.start();
+    private List<StreamBase> connections;
+    private static ConnectionManager instance = null;
+    private ConnectionManager() {
         
     }
+    
+    public ConnectionManager getInstance() {
+        if(instance!=null) {
+            return instance;
+        }
+        return new ConnectionManager();
+    }
+    
     
 }

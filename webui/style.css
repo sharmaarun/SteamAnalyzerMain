@@ -39,11 +39,36 @@ limitations under the License.
 
 body {
   font-family: sans-serif; }
+  body .loader {
+    position: absolute;
+    top: 0px;
+    right: 30px;
+    height: 50px;
+    width: 50px;
+    padding-top: 12px;
+    background: #FF6838;
+    color: white;
+    z-index: 1;
+    text-align: center;
+    display: none; }
+    body .loader .loaderIcon {
+      display: none; }
+    body .loader .loaderDoneText {
+      display: none;
+      font-size: 12px; }
   body #drawBox {
     position: absolute;
     bottom: 10px;
-    left: 0px;
-    right: 0px;
-    top: 170px; }
+    left: 20%;
+    right: 10px;
+    top: 120px; }
+  body #componentsBox {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 82%;
+    top: 120px; }
+  body .nav.nav-light-orange {
+    background: #ff6838; }
 
 /*# sourceMappingURL=style.css.map */

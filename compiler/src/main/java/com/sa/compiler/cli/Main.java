@@ -30,7 +30,13 @@ public class Main {
         for (String arg : args) {
             if (arg.equalsIgnoreCase("VERBOSE")) {
                 main.verbose = true;
-                break;
+                
+            }
+
+            if (arg.startsWith("--variable:")) {
+                String k = arg.split(":")[1].split("=")[0];
+                String v = arg.split(":")[1].split("=")[1];
+                System.setProperty(k, v);
             }
         }
 
@@ -40,59 +46,61 @@ public class Main {
         for (int j = 0; j < args.length; j++) {
             int i = j;
             String arg = args[i];
+            if(arg.startsWith("--")) continue;
             if (!main.isValidCommand(arg)) {
                 main.showUsageHelp();
                 System.out.println("Invalid Command : " + arg);
                 return;
-            }
-            switch (CLICommandsEnum.valueOf(arg)) {
-                // in case of compile command,
-                case COMPILE: {
+            } else {
+                switch (CLICommandsEnum.valueOf(arg)) {
+                    // in case of compile command,
+                    case COMPILE: {
 
-                    //check if enough arguments supplied for this command?
-                    try {
-                        inputFile = args[i + 1];
-                        if(main.isValidCommand(inputFile)) {
-                            System.out.println("Error :Command can not be supplied as an input file!");
+                        //check if enough arguments supplied for this command?
+                        try {
+                            inputFile = args[i + 1];
+                            if (main.isValidCommand(inputFile)) {
+                                System.out.println("Error :Command can not be supplied as an input file!");
+                                return;
+                            }
+                            j += 1;
+                        } catch (ArrayIndexOutOfBoundsException ex) {
+                            main.showUsageHelp();
+                            System.out.println("Not enough arguments provided!");
                             return;
                         }
-                        j+=1;
-                    } catch (ArrayIndexOutOfBoundsException ex) {
-                        main.showUsageHelp();
-                        System.out.println("Not enough arguments provided!");
-                        return;
-                    }
 
-                    boolean outputProvided = false;
-                    if (i + 2 >= args.length) {
-                        main.printVerbose("Output file path not provided, using default [current directory path]!");
-                    } else if (!main.isValidCommand(args[i+2])) {
-                        outputProvided=true;
-                    } else {
-                        main.printVerbose("Output file path not provided, using default [current directory path]!");
-                    }
-                    
-                    if(!outputProvided) {
-                        if (!inputFile.substring(inputFile.lastIndexOf(".") < 0 ? 0 : inputFile.lastIndexOf("."), inputFile.length()).equalsIgnoreCase(".json")) {
-                            System.out.println("Error: Only JSON format supported!");
-                            return;
+                        boolean outputProvided = false;
+                        if (i + 2 >= args.length) {
+                            main.printVerbose("Output file path not provided, using default [current directory path]!");
+                        } else if (!main.isValidCommand(args[i + 2])) {
+                            outputProvided = true;
+                        } else {
+                            main.printVerbose("Output file path not provided, using default [current directory path]!");
                         }
-                        outputFile = inputFile.contains("/") ? inputFile.substring(inputFile.lastIndexOf("/") + 1, inputFile.lastIndexOf(".")) + ".jar" : inputFile.substring(0, inputFile.lastIndexOf(".")) + ".jar";
-                    } else {
-                        outputFile = args[i+2];
-                        j+=1;
+
+                        if (!outputProvided) {
+                            if (!inputFile.substring(inputFile.lastIndexOf(".") < 0 ? 0 : inputFile.lastIndexOf("."), inputFile.length()).equalsIgnoreCase(".json")) {
+                                System.out.println("Error: Only JSON format supported!");
+                                return;
+                            }
+                            outputFile = inputFile.contains("/") ? inputFile.substring(inputFile.lastIndexOf("/") + 1, inputFile.lastIndexOf(".")) + ".jar" : inputFile.substring(0, inputFile.lastIndexOf(".")) + ".jar";
+                        } else {
+                            outputFile = args[i + 2];
+                            j += 1;
+                        }
+                        main.printVerbose("Input file is : " + inputFile);
+                        main.printVerbose("Output file is : " + outputFile);
+
+                        //do the main compilation
+                        Compiler compiler = new Compiler();
+                        compiler.compile(inputFile, outputFile);
+
+                        break;
+
                     }
-                    main.printVerbose("Input file is : " + inputFile);
-                    main.printVerbose("Output file is : " + outputFile);
-                    
-                    //do the main compilation
-                    Compiler compiler = new Compiler();
-                    compiler.compile(inputFile, outputFile);
-                    
-                    break;
 
                 }
-
             }
         }
 

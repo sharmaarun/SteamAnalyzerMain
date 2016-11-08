@@ -19,7 +19,7 @@ import {Component} from '@angular/core';
 import {HTTP_PROVIDERS, Http, Response, Headers, RequestOptions} from "@angular/http";
 import {Observable} from "rxjs/Rx";
 import {ActivatedRoute} from '@angular/router';
-
+import {Commons} from '../home/commons.component';
 @Component({
     templateUrl: 'app/project/create-project.component.html'
      providers: [HTTP_PROVIDERS]
@@ -371,7 +371,7 @@ export class CreateProjectPage {
     private addObjToTopology(obj, oobj) {
         var tobj = {
             "id": obj._id,
-            "type": obj.type,
+            "type": oobj.plugin.type,
             "plugin": oobj.plugin.plugin
         }
         this.updateTopologyProperties(tobj, obj);
@@ -633,9 +633,12 @@ export class CreateProjectPage {
     }
 
     public save() {
-
+        Commons.loaderShow();
+        //fill up fixed props
         this.http.post('api/projects/save', { project: this.topology }, this.headers).map(response => response.json())
-            .subscribe(d => { console.log(d); }, e => { console.log(e); }, s => { console.log(s); });
+            .subscribe(d => { console.log(d);
+            Commons.loaderDone();
+              }, e => { console.log(e); }, s => { console.log(s); });
 
 
     }
@@ -687,6 +690,25 @@ export class CreateProjectPage {
                 this.preloadProject = false;
             }, e => { console.log(e); }, s => { console.log(s); });
 
+
+    }
+    
+    public compile() {
+        Commons.loaderShow();
+        this.http.post('/api/projects/compile', { name: this.projectName }, this.headers).map(response => response.json())
+            .subscribe(p => {
+                if(p.output!==undefined && p.output!==null && p.output!==""){
+                    Commons.loaderDone(p.output);
+                } else
+                if(p.error!==undefined && p.error!==null && p.error!==""){
+                    Commons.loaderDone(p.error);
+                } else {
+                    Commons.loaderDone(p.msg);
+                }
+                
+              
+            }, e => { Commons.loaderDone(e);
+                }, s => { console.log(s); });
 
     }
 

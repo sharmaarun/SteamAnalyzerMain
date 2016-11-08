@@ -4,3 +4,6 @@ npm-debug.log
 /core/target/
 /compiler/target/
 /projects
+/plugins/core/target/
+/plugins/TwitterStream/target/
+/core_copy/target/

@@ -61,7 +61,7 @@ public class Parser {
             //parse the stages
             parseStages(stages);
             
-            return stagesParsed?true:false;
+            return stagesParsed;
             
         } catch (Exception ex) {
             System.out.println("Error: Could not parse supplied JSON");

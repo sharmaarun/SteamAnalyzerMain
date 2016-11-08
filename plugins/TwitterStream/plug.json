@@ -3,8 +3,9 @@
 	"_v":"1.0.0",
 	"type":"STREAM_STAGE",
 	"plugin":"TwitterStream",
-	"className":"TwitterStreamProvider",
-	"fqpn":"com.sa.components.base",
+	"fqcn":"com.sa.plugins.TwitterStreamProvider",
+	"package":"com.sa.plugins",
+        "jar":"target/SATwitterStream-1.0-SNAPSHOT.jar",
 	"clientParams":[
 	{
 		"type":"text",

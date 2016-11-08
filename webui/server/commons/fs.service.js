@@ -103,6 +103,12 @@ exports.list = function (path, cb) {
     });
 }
 
+exports.run_cmd = function(cmd, args) {
+  var spawn = require('child_process').spawnSync,
+  child = spawn(cmd, args);
+  return child;
+}
+
 
 
 module.exports = exports;

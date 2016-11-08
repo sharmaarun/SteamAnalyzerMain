@@ -6,7 +6,6 @@
 package com.sa.compiler.entities;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.sa.components.base.InbuiltComponentsEnum;
 
 /**
  * StreamStage class that represents a stream plugin in use along with metadata
@@ -16,7 +15,7 @@ public class StreamStage extends Stage{
     
     private int id;
     private JsonNode metadata;
-    private InbuiltComponentsEnum plugin;
+    private String plugin;
     private String fqcn;
 
     public int getId() {
@@ -27,11 +26,11 @@ public class StreamStage extends Stage{
         this.id = id;
     }
     
-    public InbuiltComponentsEnum getPlugin() {
+    public String getPlugin() {
         return plugin;
     }
 
-    public void setPlugin(InbuiltComponentsEnum plugin) {
+    public void setPlugin(String plugin) {
         this.plugin = plugin;
     }
 

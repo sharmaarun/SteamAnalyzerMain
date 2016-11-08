@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sa.compiler.entities.StreamStage;
 import com.sa.components.base.ComponentsMap;
+import com.sa.pomeditor.PomEditor;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -30,12 +31,13 @@ public class ClassWriter {
 
     private ComponentsMap cMap;
     private String code;
-    private String filePath;
+    private String projectPath;
     private ObjectMapper mapper;
+    private PomEditor mavenProject;
 
-    public ClassWriter(String classFilePath) {
+    public ClassWriter(String projectPath) {
 
-        filePath = classFilePath;
+        this.projectPath = projectPath;
         cMap = ComponentsMap.getInstance();
         code = "";
         mapper = new ObjectMapper();
@@ -43,9 +45,11 @@ public class ClassWriter {
     }
 
     public boolean prepare(Parser parser) {
+        PomEditor mavenProject = new PomEditor();
+        mavenProject.loadProject(projectPath+"/pom.xml");
 
         //imports
-        String imports = "import com.sa.components.base.TwitterStreamProvider;\n"
+        String imports = ""
                 + "import com.sa.core.StreamAnalyzer;\n"
                 + "import java.util.concurrent.TimeUnit;\n"
                 + "import org.apache.spark.api.java.JavaRDD;\n"
@@ -57,51 +61,67 @@ public class ClassWriter {
         String stagesCode = "";
         for (StreamStage stage : parser.getStreamStages()) {
 
-            String fqcn = (String) cMap.getComponentsMap().get(stage.getPlugin()).get("fqcn");
-            stage.setFqcn(fqcn);
+            //TODO: remove below comment
+            //String fqcn = (String) cMap.getComponentsMap().get(stage.getPlugin()).get("fqcn");
+            ////inject dependencies
+            System.out.println("Adding plugin : " + stage.getPlugin() + " as dependency...");
+            String pluginPath = System.getProperty("pluginsPath") + "/" + stage.getPlugin();
+            //read the json file
             try {
-                Class clazz = Class.forName(fqcn);
+                JsonNode topology = mapper.readTree(new File(pluginPath + "/plug.json"));
+                String fqcn = topology.get("fqcn").asText();
+                String plugin = topology.get("plugin").asText();
+                String pkg = topology.get("package").asText();
+                String jar = topology.get("jar").asText();
+
+                //check if the plugin name matches plugin path specified
+                if (stage.getPlugin().equalsIgnoreCase(plugin)) {
+                    stage.setFqcn(fqcn);
+                    imports += "import " + fqcn+" ; \n\n";
+                    
+                    mavenProject.removeProjectDependency(pluginPath);
+                    mavenProject.addProjectDependency(pluginPath, jar);
+                }
+            } catch (Exception ex) {
+                System.out.println("Error occured while reading plugin config! Skipping. This may lead to fatal error at runtime!");
+                ex.printStackTrace();
+                continue;
+            }
+
+            try {
+                
                 HashMap<String, Object> metaMap = new HashMap<>();
                 String serializedMetaMap = serialize(metaMap);
-                boolean preloadFound = false;
+                boolean metaDataFound = false;
                 try {
-                    Method m = clazz.getMethod("preload", HashMap.class);
+                
 
                     //serialize the metadata
                     JsonNode data = stage.getMetadata();
                     metaMap = mapper.convertValue(data, HashMap.class);
-                    
-                    for(String k : metaMap.keySet()){
+
+                    for (String k : metaMap.keySet()) {
                         System.out.println("key: " + k + " value :" + metaMap.get(k));
                     }
-                    
+
                     serializedMetaMap = serialize(metaMap);
-                    preloadFound = true;
-                } catch (IllegalArgumentException ex) {
+                    metaDataFound = true;
+                
+                } catch (Exception ex) {
                     System.out.println("Warning: No metadata found / Invalid metadata, skipping preloading!");
                     ex.printStackTrace();
-                    preloadFound = false;
-
-                } catch (Exception ex) {
-                    System.out.println("Warning: No preload method found for the plugin, skipping preloading!");
-                    ex.printStackTrace();
-                    preloadFound = false;
-
+                    metaDataFound = false;
                 }
 
-                
-                stagesCode += fqcn + " tsp_" + stage.getId() + " = new  " + fqcn + "(sc); \n\n";
-                if (preloadFound) {
+                stagesCode += stage.getFqcn() + " tsp_" + stage.getId() + " = new  " + stage.getFqcn() + "(sc); \n\n";
+                if (metaDataFound) {
                     stagesCode += "HashMap<String,Object> metaData = (HashMap<String,Object>)tsp_" + stage.getId() + ".deserialize(\"" + serializedMetaMap + "\");\n\n";
                     stagesCode += "tsp_" + stage.getId() + ".preload(metaData); \n\n";
                 }
                 stagesCode += "tsp_" + stage.getId() + ".start(); \n\n";
 
-                
-                
-
             } catch (Exception ex) {
-                System.out.println("Error : Class not found!");
+                System.out.println("Error : ");
                 ex.printStackTrace();
                 return false;
             }
@@ -111,18 +131,18 @@ public class ClassWriter {
         //for each stage, based on it's type, append to the eventual code string, the resulting code corresponding to this stage
         //once the final code string is ready, write it to file
         code += ""
-                + "package com.sa.examples;\n"
+                + "package com.sa;\n"
                 + "\n"
                 + imports
                 + "/**\n"
                 + " *\n"
                 + " * \n"
                 + " */\n"
-                + "public class " + filePath + " {\n"
+                + "public class SAEntryPoint {\n"
                 + "    \n"
-                + "    public static void main(String args[]) {\n"
+                + "    public static void main(String args[]) throws Exception {\n"
                 + "        \n"
-                + "        StreamAnalyzer sa = StreamAnalyzer.initialize();\n"
+                + "        StreamAnalyzer sa = StreamAnalyzer.initialize(args);\n"
                 + "        JavaSparkContext sc = sa.getContext();\n"
                 + "         " + stagesCode + " \n\n"
                 + "        \n"
@@ -136,7 +156,7 @@ public class ClassWriter {
 
     public void write() throws FileNotFoundException, IOException {
 
-        FileOutputStream fos = new FileOutputStream(new File(filePath));
+        FileOutputStream fos = new FileOutputStream(new File(projectPath+"/src/main/java/com/sa/SAEntryPoint.java"));
         fos.write(code.getBytes());
         fos.close();
     }
