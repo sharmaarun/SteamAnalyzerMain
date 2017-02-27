@@ -25,6 +25,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 var core_1 = require('@angular/core');
 var http_1 = require("@angular/http");
+var commons_component_1 = require('../home/commons.component');
 var ListProjectsPage = (function () {
     function ListProjectsPage(http) {
         var _this = this;
@@ -43,6 +44,12 @@ var ListProjectsPage = (function () {
             console.log("Fetched Projects!");
         });
     }
+    ListProjectsPage.prototype.deploy = function () {
+        commons_component_1.Commons.toast({ "content": "Can not deploy right now. Try again later!", timeout: 5000 });
+    };
+    ListProjectsPage.prototype.archive = function () {
+        commons_component_1.Commons.toast({ "content": "Can not archive right now. Try again later!", timeout: 5000 });
+    };
     ListProjectsPage = __decorate([
         core_1.Component({
             templateUrl: 'app/project/list-projects.component.html',

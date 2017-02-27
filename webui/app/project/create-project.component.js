@@ -608,6 +608,9 @@ var CreateProjectPage = (function () {
             commons_component_1.Commons.loaderDone(e);
         }, function (s) { console.log(s); });
     };
+    CreateProjectPage.prototype.run = function () {
+        commons_component_1.Commons.toast({ content: "Can not run right now. Execution engine seems to be not responding.<br/> Try again later!", timeout: 5000, htmlAllowed: true });
+    };
     CreateProjectPage.__LOAD_ONCE_EDITOR = true;
     CreateProjectPage = __decorate([
         core_1.Component({

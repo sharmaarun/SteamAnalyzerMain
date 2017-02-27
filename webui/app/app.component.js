@@ -30,10 +30,18 @@ var AppComponent = (function () {
     function AppComponent(router) {
         this.router = router;
         this.title = 'THS';
+        this.loggedIn = false;
         if (requestedURL !== undefined && requestedURL !== "") {
             this.router.navigate([requestedURL]);
         }
+        if (document.cookie == "loggedin=true") {
+            this.loggedIn = true;
+        }
     }
+    AppComponent.prototype.logout = function () {
+        document.cookie = "";
+        window.location.reload();
+    };
     AppComponent = __decorate([
         core_1.Component({
             selector: 'my-app',

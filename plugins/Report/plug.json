@@ -1,0 +1,17 @@
+{
+	"name":"Report",
+	"_v":"1.0.0",
+	"type":"Report_STAGE",
+	"plugin":"Report",
+	"fqcn":"com.sa.plugins.ReportGenerator",
+	"package":"com.sa.plugins",
+        "jar":"target/SAReport-1.0-SNAPSHOT.jar",
+	"description" : "Plugin to generate reports based on data checkpoints",
+	"clientParams":[
+		{
+		"type":"text",
+		"name":"Parameters",
+		"param":"parameters"
+		}
+	]
+}

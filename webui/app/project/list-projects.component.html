@@ -1,30 +1,52 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-lg-12">
-            <div class="row">
-                <h3>Projects</h3>
+            <div class="container-fluid">
+                <div class="row">
+                    <br/>
+                    <h3>Projects</h3><br/>
 
-                <div class="list-group">
-
-                    <div class="list-group-item" *ngFor="let p of projects">
-                        <div class="row-action-primary">
-                            <i class="material-icons">folder</i>
-                        </div>
-                        <div class="row-content">
-                            <div class="least-content">
-                                <button class="btn btn-sm btn-warning" [routerLink]="['/editor', p]">Edit</button>
-                            </div>
-                            <h4 class="list-group-item-heading">{{p}}</h4>
-
-                            <p class="list-group-item-text">Donec id elit non mi porta gravida at eget metus.</p>
-                        </div>
-                         <div class="list-group-separator"></div>
-                    </div>
+                    <!--                <div class="list-group">
                     
+                                        <div class="list-group-item" *ngFor="let p of projects">
+                                             <div class="row-action-primary">
+                                                <i class="material-icons">folder</i>
+                                            </div>
+                                            <div class="row-content">
+                                                <div class="least-content">
+                                                    <button class="btn btn-sm btn-warning" [routerLink]="['/editor', p]">Edit</button>
+                                                </div>
+                                                <h4 class="list-group-item-heading">{{p}}</h4>
+                    
+                                                <p class="list-group-item-text">Donec id elit non mi porta gravida at eget metus.</p>
+                                            </div>
+                                            <div class="list-group-separator"></div>
+                                        </div>
+                    
+                                    </div>-->
+
+                    <div class="col-lg-3 col-md-3 col-sm-6 col-xs-6 "  *ngFor="let p of projects">
+                         <div class="panel">
+                            <div class="panel-heading" [routerLink]="['/editor', p]">
+
+                                 <h4 class="list-group-item-heading"><i class="material-icons">folder</i> {{p}}</h4>
+
+                            </div>
+                            <div class="panel-body">
+
+
+                                <p class="">Donec id elit non mi porta gravida at eget metus.</p>
+
+                                <button class="btn-sm btn btn-warning" [routerLink]="['/editor', p]">Edit</button> | <button (click)="deploy()" class="btn-sm btn btn-warning" >Deploy</button> | <button (click)="archive()" class="btn-sm btn btn-warning" >Archive</button>
+                            </div>
+                        </div>
+
+
+                    </div>
                 </div>
+
+
             </div>
-
-
         </div>
         <div class="modal fade" id="propertiesEditor" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
             <div class="modal-dialog" role="document">
@@ -34,7 +56,7 @@
                         <h4 class="modal-title" id="myModalLabel">Edit Properties</h4>
                     </div>
                     <div class="modal-body">
-                        
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>

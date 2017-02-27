@@ -19,6 +19,10 @@ import {Routes, RouterModule } from '@angular/router';
 import { HomeComponent } from './home/home.component';
 import {CreateProjectPage} from './project/create-project.component';
 import {ListProjectsPage} from './project/list-projects.component';
+import {PasswordResetPage} from './user/password-reset.component';
+import {RegisterPage} from './user/register-page.component';
+import {ListPluginsPage} from './plugins/list-plugins.component';
+import {ReportPage} from './reports/report.component';
 const appRoutes: Routes = [
     {
         path: '',
@@ -32,6 +36,18 @@ const appRoutes: Routes = [
     },{
         path:  'projects',
         component: ListProjectsPage
+    },{
+        path:  'resetpass',
+        component: PasswordResetPage
+    },{
+        path:  'register',
+        component: RegisterPage
+    },{
+        path:  'plugins',
+        component: ListPluginsPage
+    },{
+        path:  'report/:name',
+        component: ReportPage
     }, {
         path: '**',
         redirectTo: ''

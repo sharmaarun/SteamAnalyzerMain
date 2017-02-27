@@ -23,7 +23,9 @@ package com.sa.plugins;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sa.core.IConnector;
+import com.sa.core.StreamAnalyzer;
 import com.sa.core.StreamBase;
+import com.sa.core.commons.dto.RDDDTO;
 import java.beans.Transient;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -51,15 +53,20 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
 
     private Map<String, String> creds;
     JavaDStream<Status> stream;
-    private List<JavaRDD<String>> inputBuffer; //TODO: make it more flexible
-
-    public TwitterStreamProvider(JavaSparkContext _sc) {
+    private JavaRDD<String> inputBuffer; //TODO: make it more flexible
+    private StreamAnalyzer sa;
+    private int id;
+    public TwitterStreamProvider(JavaSparkContext _sc, StreamAnalyzer sa) {
+        super(_sc, sa);
         sc = _sc;
+        this.sa = sa;
         tsc = new JavaStreamingContext(sc, Seconds.apply(1));
         
         //initialize the input buffer. It serves as the temporary memory storage of incoming tweets.
         //TODO: make this persist into a file in hdfs
-        inputBuffer = new ArrayList<JavaRDD<String>>();
+        inputBuffer = sc.emptyRDD();
+        id = idCounter;
+        System.out.println("Initialized Twitter Stream Provider : " + id);
     }
     
     /**
@@ -103,8 +110,17 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
      * @return 
      */
     @Override
-    public List<JavaRDD<String>> poll() {
-        return inputBuffer;
+    public RDDDTO poll() {
+        
+        return null;
+    }
+    
+    @Override
+    public String getCheckpointPath() {
+        if(sa.getProperties().get("hdfsMaster")!=null) {
+            return sa.getProperties().get("hdfsMaster")+"/"+sa.getProperties().get("checkpointPath")+"/tsp"+id;
+        }
+        return null;
     }
     
     /**
@@ -113,7 +129,7 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
     @Override
     public void start() {
         try {
-            TweetFetcher.fetch(stream,inputBuffer); //workaround to escape from serialization of the whole class.
+            TweetFetcher.fetch(this,stream,inputBuffer); //workaround to escape from serialization of the whole class.
             tsc.start();
             tsc.awaitTermination();
         } catch (Exception ex) {
@@ -128,5 +144,15 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
     public void setCreds(Map<String, String> creds) {
         this.creds = creds;
     }
+
+    public StreamAnalyzer getSa() {
+        return sa;
+    }
+
+    public int getId() {
+        return id;
+    }
+    
+    
 
 }

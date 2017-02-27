@@ -18,6 +18,10 @@ var router_1 = require('@angular/router');
 var home_component_1 = require('./home/home.component');
 var create_project_component_1 = require('./project/create-project.component');
 var list_projects_component_1 = require('./project/list-projects.component');
+var password_reset_component_1 = require('./user/password-reset.component');
+var register_page_component_1 = require('./user/register-page.component');
+var list_plugins_component_1 = require('./plugins/list-plugins.component');
+var report_component_1 = require('./reports/report.component');
 var appRoutes = [
     {
         path: '',
@@ -31,6 +35,18 @@ var appRoutes = [
     }, {
         path: 'projects',
         component: list_projects_component_1.ListProjectsPage
+    }, {
+        path: 'resetpass',
+        component: password_reset_component_1.PasswordResetPage
+    }, {
+        path: 'register',
+        component: register_page_component_1.RegisterPage
+    }, {
+        path: 'plugins',
+        component: list_plugins_component_1.ListPluginsPage
+    }, {
+        path: 'report/:name',
+        component: report_component_1.ReportPage
     }, {
         path: '**',
         redirectTo: ''

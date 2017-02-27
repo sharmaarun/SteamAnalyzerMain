@@ -21,7 +21,9 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 */
 package com.sa.core;
 
+import com.sa.core.commons.dto.RDDDTO;
 import java.util.List;
+import org.apache.spark.api.java.JavaRDD;
 
 /**
  * Interface describing a stage as capable of doing I/O
@@ -33,10 +35,9 @@ public interface IConnector {
      * Should be implemented to poll data from the data provider [eg. twitter]
      */
     void fetch();
-    
     /**
      * Should be implemented to let the next stage poll the data from this stage.
      */
-    public List poll();
+    RDDDTO poll();
     
 }

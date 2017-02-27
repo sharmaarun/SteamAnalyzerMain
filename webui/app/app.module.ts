@@ -19,14 +19,18 @@ import { NgModule }      from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { routing } from './app.routing';
 import { HttpModule } from '@angular/http';
+import { ChartsModule } from 'ng2-charts/ng2-charts';
 import { AppComponent }  from './app.component';
 import { HomeComponent } from  './home/home.component';
 import { CreateProjectPage } from  './project/create-project.component';
 import { ListProjectsPage } from  './project/list-projects.component';
+import { ListPluginsPage } from  './plugins/list-plugins.component';
+import {ReportPage} from './reports/report.component';
+
 
 @NgModule({
-    imports: [BrowserModule, routing, HttpModule],
-    declarations: [AppComponent, HomeComponent, CreateProjectPage, ListProjectsPage],
+    imports: [BrowserModule, routing, HttpModule, ChartsModule],
+    declarations: [AppComponent, HomeComponent, CreateProjectPage, ListProjectsPage, ListPluginsPage, ReportPage],
     bootstrap: [AppComponent]
 })
 export class AppModule { }

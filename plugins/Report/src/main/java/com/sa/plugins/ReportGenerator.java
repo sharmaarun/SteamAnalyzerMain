@@ -19,11 +19,13 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.sa.components.base;
+package com.sa.plugins;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sa.core.IConnector;
+import com.sa.core.StreamAnalyzer;
 import com.sa.core.StreamBase;
+import com.sa.core.commons.dto.RDDDTO;
 import java.beans.Transient;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -47,19 +49,23 @@ import twitter4j.Status;
  * One of the base components used to provide social tweets stream.
  * @author arunsharma
  */
-public class TwitterStreamProvider extends StreamBase implements IConnector {
+public class ReportGenerator extends StreamBase implements IConnector {
 
     private Map<String, String> creds;
     JavaDStream<Status> stream;
-    private List<JavaRDD<String>> inputBuffer; //TODO: make it more flexible
-
-    public TwitterStreamProvider(JavaSparkContext _sc) {
+    private JavaRDD<String> inputBuffer; //TODO: make it more flexible
+    private StreamAnalyzer sa;
+    public ReportGenerator(JavaSparkContext _sc, StreamAnalyzer sa) {
+        super(_sc, sa);
         sc = _sc;
+        this.sa = sa;
         tsc = new JavaStreamingContext(sc, Seconds.apply(1));
         
         //initialize the input buffer. It serves as the temporary memory storage of incoming tweets.
         //TODO: make this persist into a file in hdfs
-        inputBuffer = new ArrayList<JavaRDD<String>>();
+        inputBuffer = sc.emptyRDD();
+        
+        
     }
     
     /**
@@ -70,7 +76,7 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
      * @param metadata 
      */
     public void preload(HashMap<String,Object> metadata) {
-        
+        try {
         String ck = (String)metadata.get("consumer_key");
         String cs = (String) metadata.get("consumer_secret");
         String at = (String) metadata.get("access_token");
@@ -84,6 +90,10 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
         
         //create a twitter stream using spark streaing context
         stream = TwitterUtils.createStream(tsc);
+        } catch(Exception ex ){
+            System.out.println("Could not initialize plugin : ");
+            ex.printStackTrace();
+        }
     }
     
     /**
@@ -99,8 +109,17 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
      * @return 
      */
     @Override
-    public List<JavaRDD<String>> poll() {
-        return inputBuffer;
+    public RDDDTO poll() {
+        
+        return null;
+    }
+    
+    @Override
+    public String getCheckpointPath() {
+        if(sa.getProperties().get("hdfsMaster")!=null) {
+            return sa.getProperties().get("hdfsMaster")+"/"+sa.getProperties().get("checkpointPath");
+        }
+        return null;
     }
     
     /**
@@ -109,7 +128,7 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
     @Override
     public void start() {
         try {
-            TweetFetcher.fetch(stream,inputBuffer); //workaround to escape from serialization of the whole class.
+            TweetFetcher.fetch(this,stream,inputBuffer); //workaround to escape from serialization of the whole class.
             tsc.start();
             tsc.awaitTermination();
         } catch (Exception ex) {
@@ -124,5 +143,11 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
     public void setCreds(Map<String, String> creds) {
         this.creds = creds;
     }
+
+    public StreamAnalyzer getSa() {
+        return sa;
+    }
+    
+    
 
 }

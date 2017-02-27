@@ -19,9 +19,11 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.sa.components.base;
+package com.sa.plugins;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -40,7 +42,9 @@ public class TweetFetcher implements Serializable{
     }
     
     //fetch the data/tweets into string stream array
-    public static void fetch(JavaDStream iStream, List output) {
+    public static void fetch(TwitterStreamProvider tsp, JavaDStream iStream, JavaRDD<String> output) {
+        
+        
         JavaDStream<String> statuses = iStream.map(new Function<Status, String>() {
             public String call(Status status) {
                 return status.getText();
@@ -50,14 +54,36 @@ public class TweetFetcher implements Serializable{
         
         //save each bunch into the specified buffer
         //TODO: move to other function
+        
         statuses.foreachRDD(new VoidFunction<JavaRDD<String>>() {
+            String cpPath = new String(tsp.getCheckpointPath());
+            
+            
             @Override
             public void call(JavaRDD<String> t1) {
-                System.out.println(t1.count());
-                output.add(t1);
+//                System.out.println("=================================");
+//                System.out.println("=================================");
+//                System.out.println("RDD id: " + t1.id());
+//                System.out.println("Count is " + t1.count());
+//                System.out.println("=================================");
+//                System.out.println("=================================");
+//              
+                System.out.println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-");
+                System.out.println(cpPath);
+                t1.coalesce(1).saveAsTextFile(cpPath+"/rdd"+t1.id());
                 return;
             }
         });
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
     }
     
 }

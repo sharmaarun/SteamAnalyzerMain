@@ -21,11 +21,14 @@
  */
 package com.sa.core;
 
+import com.sa.core.commons.dto.RDDDTO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Base64;
+import java.util.Map;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.streaming.Seconds;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
@@ -35,13 +38,18 @@ import org.apache.spark.streaming.api.java.JavaStreamingContext;
  *
  * @author arunsharma
  */
-public abstract class StreamBase {
-
-    protected JavaSparkContext sc;
-    protected JavaStreamingContext tsc;
-
+public abstract class StreamBase implements Serializable{
+    public static int idCounter= 0;
+    public JavaSparkContext sc;
+    public StreamAnalyzer sa;
+    public JavaStreamingContext tsc;
+    public StreamBase(JavaSparkContext sc, StreamAnalyzer sa) {
+        idCounter+=1;
+        this.sc = sc;
+        this.sa = sa;
+    }
     public abstract void start();
-
+    public abstract String getCheckpointPath();
     /**
      * Read the object from Base64 string.
      */

@@ -18,6 +18,7 @@
 import {Component} from '@angular/core';
 import {HTTP_PROVIDERS, Http, Response, Headers, RequestOptions} from "@angular/http";
 import {Observable} from "rxjs/Rx";
+import {Commons} from '../home/commons.component';
 @Component({
     templateUrl: 'app/project/list-projects.component.html'
      providers: [HTTP_PROVIDERS]
@@ -43,6 +44,14 @@ export class ListProjectsPage {
         }
         );
         
+    }
+    
+    public deploy() {
+        Commons.toast({"content":"Can not deploy right now. Try again later!", timeout:5000});
+    }
+    
+    public archive() {
+        Commons.toast({"content":"Can not archive right now. Try again later!", timeout:5000});
     }
 
 }

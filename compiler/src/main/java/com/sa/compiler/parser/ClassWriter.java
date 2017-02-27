@@ -47,7 +47,11 @@ public class ClassWriter {
     public boolean prepare(Parser parser) {
         PomEditor mavenProject = new PomEditor();
         mavenProject.loadProject(projectPath+"/pom.xml");
-
+        System.out.println("Adding core library ...");
+        mavenProject.removeProjectDependency(System.getProperty("coreLibPath"));
+        //TODO: replace "maven" with variable value  v c
+        mavenProject.addProjectDependency(System.getProperty("coreLibPath"),"maven");
+        
         //imports
         String imports = ""
                 + "import com.sa.core.StreamAnalyzer;\n"
@@ -113,7 +117,7 @@ public class ClassWriter {
                     metaDataFound = false;
                 }
 
-                stagesCode += stage.getFqcn() + " tsp_" + stage.getId() + " = new  " + stage.getFqcn() + "(sc); \n\n";
+                stagesCode += stage.getFqcn() + " tsp_" + stage.getId() + " = new  " + stage.getFqcn() + "(sc, sa); \n\n";
                 if (metaDataFound) {
                     stagesCode += "HashMap<String,Object> metaData = (HashMap<String,Object>)tsp_" + stage.getId() + ".deserialize(\"" + serializedMetaMap + "\");\n\n";
                     stagesCode += "tsp_" + stage.getId() + ".preload(metaData); \n\n";

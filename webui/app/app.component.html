@@ -28,9 +28,9 @@ limitations under the License.
             </button>
             <a class="navbar-brand" href="javascript:void(0)">Stream Analyzer</a>
         </div>
-        <div class="navbar-collapse collapse navbar-responsive-collapse">
+        <div class="navbar-collapse collapse navbar-responsive-collapse" *ngIf="loggedIn">
             <ul class="nav navbar-nav">
-                <li class="active"><a href="javascript:void(0)">Dash</a></li>
+                <li><a [routerLink]="['/']">Dashboard</a></li>
                 <li class="dropdown">
                     <a href="#"  class="dropdown-toggle" data-toggle="dropdown">Projects
                         <b class="caret"></b></a>
@@ -40,6 +40,14 @@ limitations under the License.
                         <!--            <li><a href="javascript:void(0)">Something else here</a></li>
                                     <li class="divider"></li>
                         -->
+                    </ul>
+                </li>
+                <li><a [routerLink]="['/plugins']">Plugins</a></li>
+                <li class="dropdown">
+                    <a href="#"  class="dropdown-toggle" data-toggle="dropdown">Account
+                        <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="javascript:void(0);" (click)="logout()">Logout</a></li>
                     </ul>
                 </li>
             </ul>

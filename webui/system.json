@@ -8,7 +8,13 @@
     },
     "template": {
         "path": "/home/arunsharma/MS/research/THS/projects/test-twitter",
-        "name" : "core_copy"
+        "name" : "template"
+    },
+    "library" : {
+        "core": {
+            "path" : "/home/arunsharma/MS/research/THS/projects/test-twitter/core",
+            "type" : "maven"
+        }
     },
     "hdfsConnectionParams": {
         "user": "hadoop",

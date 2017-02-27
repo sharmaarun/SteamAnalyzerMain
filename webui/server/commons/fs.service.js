@@ -104,9 +104,14 @@ exports.list = function (path, cb) {
 }
 
 exports.run_cmd = function(cmd, args) {
+    try {
   var spawn = require('child_process').spawnSync,
   child = spawn(cmd, args);
   return child;
+    }catch (e) {
+        console.log(e);
+    }
+    return {};
 }
 
 

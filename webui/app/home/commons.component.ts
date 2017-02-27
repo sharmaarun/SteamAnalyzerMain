@@ -15,7 +15,7 @@
  */
 
 
-import { Injectable } from '@angular/core';
+import { Injectable, Pipe, PipeTransform } from '@angular/core';
 
 @Injectable()
 export class Commons {
@@ -38,7 +38,7 @@ export class Commons {
         ldt.style.display = "block";
         var li = document.getElementById("loaderIcon");
         li.style.display = "none";
-        if(msg!==undefined) {
+        if(msg!==undefined && msg!=="") {
          alert(msg);   
         }
         Commons.loaderTimer = setTimeout(function(){
@@ -56,4 +56,42 @@ export class Commons {
         alert(output);
     }
     
+    public static toast(options) {
+        var o = {
+            content:"Ola!",
+            timeout:2000
+        };
+        if(options!=undefined && options!=null && options !="") {
+            o = options;
+        }
+        
+        $.snackbar(o);
+        
+        
+    }
+    
+    
+}
+
+@Pipe({
+    name: 'filter'
+})
+@Injectable()
+export class FilterPipe implements PipeTransform {
+    transform(items:any[], args?):any[] { 
+        if (!items) return [];        
+        return items.filter(it => {if(args=="" || args==undefined || args==null){ return true; } else {return it.indexOf(args)!==-1}});
+    }
+}
+
+@Pipe({
+    name: 'filterProps'
+})
+@Injectable()
+export class FilterPropsPipe implements PipeTransform {
+    transform(items:any[],  args?):any[] { 
+        let [prop,val] = args;
+        if (!items) return [];        
+        return items.filter(it => {if(args=="" || args==undefined || args==null){ return true; } else {return it[prop].indexOf(val)!==-1}});
+    }
 }

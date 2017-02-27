@@ -30,10 +30,18 @@ var AppComponent = (function () {
     function AppComponent(router) {
         this.router = router;
         this.title = 'THS';
+        this.loggedIn = false;
         if (requestedURL !== undefined && requestedURL !== "") {
             this.router.navigate([requestedURL]);
         }
+        if (document.cookie == "loggedin=true") {
+            this.loggedIn = true;
+        }
     }
+    AppComponent.prototype.logout = function () {
+        document.cookie = "";
+        window.location.reload();
+    };
     AppComponent = __decorate([
         core_1.Component({
             selector: 'my-app',
@@ -75,17 +83,20 @@ var core_1 = require('@angular/core');
 var platform_browser_1 = require('@angular/platform-browser');
 var app_routing_1 = require('./app.routing');
 var http_1 = require('@angular/http');
+var ng2_charts_1 = require('ng2-charts/ng2-charts');
 var app_component_1 = require('./app.component');
 var home_component_1 = require('./home/home.component');
 var create_project_component_1 = require('./project/create-project.component');
 var list_projects_component_1 = require('./project/list-projects.component');
+var list_plugins_component_1 = require('./plugins/list-plugins.component');
+var report_component_1 = require('./reports/report.component');
 var AppModule = (function () {
     function AppModule() {
     }
     AppModule = __decorate([
         core_1.NgModule({
-            imports: [platform_browser_1.BrowserModule, app_routing_1.routing, http_1.HttpModule],
-            declarations: [app_component_1.AppComponent, home_component_1.HomeComponent, create_project_component_1.CreateProjectPage, list_projects_component_1.ListProjectsPage],
+            imports: [platform_browser_1.BrowserModule, app_routing_1.routing, http_1.HttpModule, ng2_charts_1.ChartsModule],
+            declarations: [app_component_1.AppComponent, home_component_1.HomeComponent, create_project_component_1.CreateProjectPage, list_projects_component_1.ListProjectsPage, list_plugins_component_1.ListPluginsPage, report_component_1.ReportPage],
             bootstrap: [app_component_1.AppComponent]
         }), 
         __metadata('design:paramtypes', [])
@@ -114,6 +125,10 @@ var router_1 = require('@angular/router');
 var home_component_1 = require('./home/home.component');
 var create_project_component_1 = require('./project/create-project.component');
 var list_projects_component_1 = require('./project/list-projects.component');
+var password_reset_component_1 = require('./user/password-reset.component');
+var register_page_component_1 = require('./user/register-page.component');
+var list_plugins_component_1 = require('./plugins/list-plugins.component');
+var report_component_1 = require('./reports/report.component');
 var appRoutes = [
     {
         path: '',
@@ -127,6 +142,18 @@ var appRoutes = [
     }, {
         path: 'projects',
         component: list_projects_component_1.ListProjectsPage
+    }, {
+        path: 'resetpass',
+        component: password_reset_component_1.PasswordResetPage
+    }, {
+        path: 'register',
+        component: register_page_component_1.RegisterPage
+    }, {
+        path: 'plugins',
+        component: list_plugins_component_1.ListPluginsPage
+    }, {
+        path: 'report/:name',
+        component: report_component_1.ReportPage
     }, {
         path: '**',
         redirectTo: ''
@@ -178,7 +205,7 @@ var Commons = (function () {
         ldt.style.display = "block";
         var li = document.getElementById("loaderIcon");
         li.style.display = "none";
-        if (msg !== undefined) {
+        if (msg !== undefined && msg !== "") {
             alert(msg);
         }
         Commons.loaderTimer = setTimeout(function () {
@@ -193,6 +220,16 @@ var Commons = (function () {
     Commons.loaderError = function (output) {
         alert(output);
     };
+    Commons.toast = function (options) {
+        var o = {
+            content: "Ola!",
+            timeout: 2000
+        };
+        if (options != undefined && options != null && options != "") {
+            o = options;
+        }
+        $.snackbar(o);
+    };
     Commons.loaderTimer = -1;
     Commons = __decorate([
         core_1.Injectable(), 
@@ -201,6 +238,53 @@ var Commons = (function () {
     return Commons;
 }());
 exports.Commons = Commons;
+var FilterPipe = (function () {
+    function FilterPipe() {
+    }
+    FilterPipe.prototype.transform = function (items, args) {
+        if (!items)
+            return [];
+        return items.filter(function (it) { if (args == "" || args == undefined || args == null) {
+            return true;
+        }
+        else {
+            return it.indexOf(args) !== -1;
+        } });
+    };
+    FilterPipe = __decorate([
+        core_1.Pipe({
+            name: 'filter'
+        }),
+        core_1.Injectable(), 
+        __metadata('design:paramtypes', [])
+    ], FilterPipe);
+    return FilterPipe;
+}());
+exports.FilterPipe = FilterPipe;
+var FilterPropsPipe = (function () {
+    function FilterPropsPipe() {
+    }
+    FilterPropsPipe.prototype.transform = function (items, args) {
+        var prop = args[0], val = args[1];
+        if (!items)
+            return [];
+        return items.filter(function (it) { if (args == "" || args == undefined || args == null) {
+            return true;
+        }
+        else {
+            return it[prop].indexOf(val) !== -1;
+        } });
+    };
+    FilterPropsPipe = __decorate([
+        core_1.Pipe({
+            name: 'filterProps'
+        }),
+        core_1.Injectable(), 
+        __metadata('design:paramtypes', [])
+    ], FilterPropsPipe);
+    return FilterPropsPipe;
+}());
+exports.FilterPropsPipe = FilterPropsPipe;
 //# sourceMappingURL=commons.component.js.map;
 /*
  * Copyright 2016 arunsharma.
@@ -228,15 +312,168 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
+var ng2_charts_1 = require('ng2-charts/ng2-charts');
+var commons_component_1 = require('./commons.component');
+var http_1 = require("@angular/http");
 var HomeComponent = (function () {
-    function HomeComponent() {
+    function HomeComponent(http) {
+        this.http = http;
+        this.loggedIn = false;
+        this.user = { email: "arun.sharma@upr.edu", username: "arun", password: "arun" };
+        this.fUser = {
+            email: "",
+            password: ""
+        };
+        this.headers = new http_1.Headers({ "Content-Type": "application/json" });
         this.title = "Stream Analyzer";
+        this.resourceChart = {};
+        this.reports = [];
+        this.filterReports = "";
+        this.loadedCharts = false;
+        this.chartsRef = {};
+        this.doughnutChartLabels = ['RAM (%/100)', 'DISK I/O (%/100)', 'CPU (%/100)'];
+        this.doughnutChartData = [30, 50, 99];
+        this.doughnutChartType = 'doughnut';
+        this.lineChartData = [
+            { data: [65, 59, 80, 81, 56, 55, 40], label: 'Project 1' },
+            { data: [65, 59, 80, 81, 56, 55, 40], label: 'Project 2' }
+        ];
+        this.lineChartLabels = ['1', '2', '3', '4', '5', '6', '7'];
+        this.lineChartOptions = {
+            animation: false,
+            responsive: true
+        };
+        this.lineChartColors = [
+            {
+                backgroundColor: 'rgba(148,159,177,0.2)',
+                borderColor: 'rgba(148,159,177,1)',
+                pointBackgroundColor: 'rgba(148,159,177,1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(148,159,177,0.8)'
+            },
+            {
+                backgroundColor: 'rgba(77,83,96,0.2)',
+                borderColor: 'rgba(77,83,96,1)',
+                pointBackgroundColor: 'rgba(77,83,96,1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(77,83,96,1)'
+            },
+            {
+                backgroundColor: 'rgba(148,159,177,0.2)',
+                borderColor: 'rgba(148,159,177,1)',
+                pointBackgroundColor: 'rgba(148,159,177,1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(148,159,177,0.8)'
+            }
+        ];
+        this.lineChartLegend = true;
+        this.lineChartType = 'line';
+        this.lineChartLabelUpdate = this.lineChartLabels[6];
+        this.flag = false;
+        if (document.cookie == "loggedin=true") {
+            this.loggedIn = true;
+        }
+        if (this.loggedIn)
+            this.init();
     }
+    HomeComponent.prototype.updateFunction = function () {
+        var _this_ = this;
+        _this_.appendRandom(_this_.lineChartData[0].data);
+        _this_.appendRandom(_this_.lineChartData[1].data);
+        _this_.chartsRef.lineChart.ngOnChanges({});
+    };
+    HomeComponent.prototype.appendRandom = function (arr) {
+        var tmp = 0;
+        for (var i = 0; i < arr.length; i++) {
+            tmp = arr[i];
+            if (i < arr.length - 1) {
+                arr[i] = arr[i + 1];
+            }
+        }
+        arr[arr.length - 1] = Math.random() * 100;
+    };
+    HomeComponent.prototype.init = function () {
+        var _this_ = this;
+        this.initCharts();
+        this.initReports();
+        setTimeout(function () {
+            _this_.charts.forEach(function (cc) {
+                _this_.chartsRef[cc.element.nativeElement.id] = cc;
+            });
+            _this_.loadedCharts = true;
+            console.log(_this_.chartsRef);
+        }, 500);
+        setInterval(function () {
+            if (_this_.loadedCharts)
+                _this_.updateFunction();
+        }, 2000);
+    };
+    HomeComponent.prototype.initCharts = function () {
+        this.resourceChart.type = "doughnut";
+        this.resourceChart.data = {
+            labels: [
+                "RAM (%/100)",
+                "DISK (%/100)",
+                "CPU (%/100)"
+            ],
+            datasets: [
+                {
+                    data: [30, 50, 99],
+                    backgroundColor: [
+                        "#FF6384",
+                        "#36A2EB",
+                        "#FFCE56"
+                    ],
+                    hoverBackgroundColor: [
+                        "#FF6384",
+                        "#36A2EB",
+                        "#FFCE56"
+                    ]
+                }]
+        };
+    };
+    HomeComponent.prototype.initReports = function () {
+        var _this = this;
+        commons_component_1.Commons.loaderShow();
+        var action;
+        this.http.get('/api/projects', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            commons_component_1.Commons.loaderDone("");
+            action = commons_component_1.Commons.toast({ content: "Loaded Reports.", timeout: 1000 });
+            for (var i = 0; i < d.length; i++) {
+                _this.reports.push(d[i]);
+            }
+        }, function (e) {
+            commons_component_1.Commons.loaderDone("");
+            console.log("");
+        }, function (s) {
+            commons_component_1.Commons.loaderDone("");
+            console.log("Fetched Projects!");
+        });
+    };
+    HomeComponent.prototype.login = function () {
+        if (this.fUser.email != this.user.email || this.fUser.password != this.user.password) {
+            commons_component_1.Commons.toast({ content: "Invalid Username/Password!", timeout: 5000 });
+            return;
+        }
+        this.loggedIn = true;
+        document.cookie = "loggedin=true";
+        window.location.reload();
+        return false;
+    };
+    __decorate([
+        core_1.ViewChildren(ng2_charts_1.BaseChartDirective), 
+        __metadata('design:type', ng2_charts_1.BaseChartDirective)
+    ], HomeComponent.prototype, "charts", void 0);
     HomeComponent = __decorate([
         core_1.Component({
-            templateUrl: 'app/home/home.component.html'
+            templateUrl: 'app/home/home.component.html',
+            providers: [http_1.HTTP_PROVIDERS],
+            pipes: [commons_component_1.FilterPipe]
         }), 
-        __metadata('design:paramtypes', [])
+        __metadata('design:paramtypes', [http_1.Http])
     ], HomeComponent);
     return HomeComponent;
 }());
@@ -382,6 +619,92 @@ var Stage = (function () {
 }());
 exports.Stage = Stage;
 //# sourceMappingURL=stage.js.map;
+/*
+ * Copyright 2016 arunsharma.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var core_1 = require('@angular/core');
+var http_1 = require("@angular/http");
+var commons_component_1 = require('../home/commons.component');
+var ListPluginsPage = (function () {
+    function ListPluginsPage(http) {
+        //load the plugins
+        this.http = http;
+        this.title = "List Plugins";
+        this.plugins = [];
+        this.selectedPlugin = {};
+        this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
+        this.refreshPluginsList();
+    }
+    ListPluginsPage.prototype.refreshPluginsList = function () {
+        var _this = this;
+        //fetch projects 
+        this.http.get('/api/plugins', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            console.log(_this.plugins);
+            _this.plugins = d;
+            console.log(_this.plugins);
+        }, function (e) {
+            console.log("Cound not fetch projects list!");
+        }, function (s) {
+            console.log("Fetched Projects!");
+        });
+    };
+    ListPluginsPage.prototype.showInfo = function (p) {
+        this.selectedPlugin = p;
+        $("#infoViewer").modal("show");
+    };
+    ListPluginsPage.prototype.remove = function (p) {
+        var confirm = window.confirm("Continue with plugin removal?");
+        if (!confirm)
+            return;
+        commons_component_1.Commons.loaderShow();
+        var action;
+        this.http.post('/api/plugins/remove', { plugin: p }, this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            commons_component_1.Commons.loaderDone("");
+            action = commons_component_1.Commons.toast({ content: "Removed Plugin " + p.name + " ..." });
+        }, function (e) {
+            action = commons_component_1.Commons.toast({ content: "Cound not remove plugin!", timeout: 3000 });
+            commons_component_1.Commons.loaderDone("");
+            console.log("");
+        }, function (s) {
+            action = commons_component_1.Commons.toast({ content: "Done.", timeout: 1000 });
+            commons_component_1.Commons.loaderDone("");
+            console.log("Fetched Projects!");
+        });
+    };
+    ListPluginsPage = __decorate([
+        core_1.Component({
+            templateUrl: 'app/plugins/list-plugins.component.html',
+            providers: [http_1.HTTP_PROVIDERS],
+            pipes: [commons_component_1.FilterPropsPipe]
+        }), 
+        __metadata('design:paramtypes', [http_1.Http])
+    ], ListPluginsPage);
+    return ListPluginsPage;
+}());
+exports.ListPluginsPage = ListPluginsPage;
+//# sourceMappingURL=list-plugins.component.js.map;
 /*
  * Copyright 2016 arunsharma.
  *
@@ -992,6 +1315,9 @@ var CreateProjectPage = (function () {
             commons_component_1.Commons.loaderDone(e);
         }, function (s) { console.log(s); });
     };
+    CreateProjectPage.prototype.run = function () {
+        commons_component_1.Commons.toast({ content: "Can not run right now. Execution engine seems to be not responding.<br/> Try again later!", timeout: 5000, htmlAllowed: true });
+    };
     CreateProjectPage.__LOAD_ONCE_EDITOR = true;
     CreateProjectPage = __decorate([
         core_1.Component({
@@ -1031,6 +1357,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 var core_1 = require('@angular/core');
 var http_1 = require("@angular/http");
+var commons_component_1 = require('../home/commons.component');
 var ListProjectsPage = (function () {
     function ListProjectsPage(http) {
         var _this = this;
@@ -1049,6 +1376,12 @@ var ListProjectsPage = (function () {
             console.log("Fetched Projects!");
         });
     }
+    ListProjectsPage.prototype.deploy = function () {
+        commons_component_1.Commons.toast({ "content": "Can not deploy right now. Try again later!", timeout: 5000 });
+    };
+    ListProjectsPage.prototype.archive = function () {
+        commons_component_1.Commons.toast({ "content": "Can not archive right now. Try again later!", timeout: 5000 });
+    };
     ListProjectsPage = __decorate([
         core_1.Component({
             templateUrl: 'app/project/list-projects.component.html',
@@ -1059,4 +1392,229 @@ var ListProjectsPage = (function () {
     return ListProjectsPage;
 }());
 exports.ListProjectsPage = ListProjectsPage;
-//# sourceMappingURL=list-projects.component.js.map
+//# sourceMappingURL=list-projects.component.js.map;
+/*
+ * Copyright 2016 arunsharma.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var core_1 = require('@angular/core');
+var ng2_charts_1 = require('ng2-charts/ng2-charts');
+var http_1 = require("@angular/http");
+var router_1 = require('@angular/router');
+var ReportPage = (function () {
+    function ReportPage(http, route) {
+        this.http = http;
+        this.route = route;
+        this.projectName = "";
+        this.chartsRef = {};
+        this.loadedCharts = false;
+        this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
+        this.lineChartData = [
+            { data: [65, 59, 80, 81, 56, 55, 40], label: 'Main Project' }
+        ];
+        this.lineChartLabels = ['1', '2', '3', '4', '5', '6', '7'];
+        this.lineChartOptions = {
+            animation: false,
+            responsive: true
+        };
+        this.lineChartColors = [
+            {
+                backgroundColor: 'rgba(148,159,177,0.2)',
+                borderColor: 'rgba(148,159,177,1)',
+                pointBackgroundColor: 'rgba(148,159,177,1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(148,159,177,0.8)'
+            },
+            {
+                backgroundColor: 'rgba(77,83,96,0.2)',
+                borderColor: 'rgba(77,83,96,1)',
+                pointBackgroundColor: 'rgba(77,83,96,1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(77,83,96,1)'
+            },
+            {
+                backgroundColor: 'rgba(148,159,177,0.2)',
+                borderColor: 'rgba(148,159,177,1)',
+                pointBackgroundColor: 'rgba(148,159,177,1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(148,159,177,0.8)'
+            }
+        ];
+        this.lineChartType = "line";
+        var _this_ = this;
+        //load the plugins
+        setTimeout(function () {
+            _this_.charts.forEach(function (cc) {
+                _this_.chartsRef[cc.element.nativeElement.id] = cc;
+            });
+            _this_.loadedCharts = true;
+            console.log(_this_.chartsRef);
+        }, 500);
+        setInterval(function () {
+            if (_this_.loadedCharts)
+                _this_.updateFunction();
+        }, 1000);
+    }
+    ReportPage.prototype.ngOnInit = function () {
+        var _this = this;
+        this.route.params.subscribe(function (params) {
+            _this.projectName = params['name']; // (+) converts string 'id' to a number
+            // In a real app: dispatch action to load the details here.
+        });
+    };
+    ReportPage.prototype.getUpdates = function () {
+        var _this = this;
+        //fetch projects 
+        this.http.get('/api/reports', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            console.log(_this.plugins);
+            _this.plugins = d;
+            console.log(_this.plugins);
+        }, function (e) {
+            console.log("Cound not fetch projects list!");
+        }, function (s) {
+            console.log("Fetched Projects!");
+        });
+    };
+    ReportPage.prototype.updateFunction = function () {
+        var _this_ = this;
+        _this_.appendRandom(_this_.lineChartData[0].data);
+        _this_.chartsRef.lineChart.ngOnChanges({});
+    };
+    ReportPage.prototype.appendRandom = function (arr) {
+        var tmp = 0;
+        for (var i = 0; i < arr.length; i++) {
+            tmp = arr[i];
+            if (i < arr.length - 1) {
+                arr[i] = arr[i + 1];
+            }
+        }
+        arr[arr.length - 1] = Math.random() * 100;
+    };
+    __decorate([
+        core_1.ViewChildren(ng2_charts_1.BaseChartDirective), 
+        __metadata('design:type', ng2_charts_1.BaseChartDirective)
+    ], ReportPage.prototype, "charts", void 0);
+    ReportPage = __decorate([
+        core_1.Component({
+            templateUrl: 'app/reports/report.component.html',
+            providers: [http_1.HTTP_PROVIDERS]
+        }), 
+        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute])
+    ], ReportPage);
+    return ReportPage;
+}());
+exports.ReportPage = ReportPage;
+//# sourceMappingURL=report.component.js.map;
+/*
+ * Copyright 2016 arunsharma.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var core_1 = require('@angular/core');
+var commons_component_1 = require('../home/commons.component');
+var PasswordResetPage = (function () {
+    function PasswordResetPage() {
+        this.title = "Password Reset";
+    }
+    PasswordResetPage.prototype.resetPass = function () {
+        commons_component_1.Commons.toast({ content: "Mail sent to the email id with reset instructions!", timeout: 5000 });
+    };
+    PasswordResetPage = __decorate([
+        core_1.Component({
+            templateUrl: 'app/user/password-reset.component.html'
+        }), 
+        __metadata('design:paramtypes', [])
+    ], PasswordResetPage);
+    return PasswordResetPage;
+}());
+exports.PasswordResetPage = PasswordResetPage;
+//# sourceMappingURL=password-reset.component.js.map;
+/*
+ * Copyright 2016 arunsharma.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var core_1 = require('@angular/core');
+var router_1 = require('@angular/router');
+var RegisterPage = (function () {
+    function RegisterPage(router) {
+        this.router = router;
+        this.title = "Register";
+    }
+    RegisterPage.prototype.register = function () {
+        this.router.navigate(['/']);
+    };
+    RegisterPage = __decorate([
+        core_1.Component({
+            templateUrl: 'app/user/register-page.component.html'
+        }), 
+        __metadata('design:paramtypes', [router_1.Router])
+    ], RegisterPage);
+    return RegisterPage;
+}());
+exports.RegisterPage = RegisterPage;
+//# sourceMappingURL=register-page.component.js.map

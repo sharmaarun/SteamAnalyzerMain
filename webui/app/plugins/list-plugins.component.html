@@ -1,0 +1,104 @@
+<div class="container-fluid">
+    <div class="row">
+        <br/>
+        <div class="col-lg-12">
+            <div class="container-fluid">
+
+
+                <div class="row">
+                    <div class="col-lg-4 col-md-5 col-sm-12 col-xs-12" >
+                        <h3>Installed Plugins</h3> <input type="text" [(ngModel)] = "filterPlugins" class="form-control left" id="searchPlugin" placeholder="Filter Plugin"/>
+                    </div>
+
+                    <div class="col-lg-8 col-md-7 col-sm-3 col-xs-12 text-right">
+                        <div class="input-group">
+                            <label class="input-group-btn">
+                                <span class="btn btn-raised btn-primary btn-sm right">
+                                    <i class="material-icons">file_download</i> Install
+                                    <input type="file" style="display: none;" multiple>
+                                </span>
+                            </label>
+                        </div>
+                        
+
+
+
+
+                    </div>
+
+
+
+
+
+
+                </div>
+                <div class="row">
+                    <br/>
+                    <div class="col-lg-3 col-md-3 col-sm-6 col-xs-6 "  *ngFor="let p of plugins | filterProps : ['name',filterPlugins]">
+
+                         <div class="panel">
+                            <div class="panel-heading" >
+                                <h4 class="list-group-item-heading"><i class="material-icons">settings_input_component</i> {{p.name}}</h4>
+                            </div>
+                            <div class="panel-body">
+
+
+                                <p class="">{{p.description}}</p>
+
+                                <button (click)="remove(p)" class="btn-sm btn btn-warning" >Remove</button> | <button (click)="showInfo(p)" class="btn-sm btn btn-warning" >More..</button>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+        <div class="modal fade" id="infoViewer" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel">Plugin Information</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-lg-6 col-md-6 col-xs-6 col-sm-6">
+                                    <b>Name</b>
+                                </div>
+                                <div class="col-lg-6 col-md-6 col-xs-6 col-sm-6">
+                                    {{selectedPlugin.name}} - Version : {{selectedPlugin._v}}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6 col-md-6 col-xs-6 col-sm-6">
+                                    <b>FQCN (Fully Qualified Class Name)</b>
+                                </div>
+                                <div class="col-lg-6 col-md-6 col-xs-6 col-sm-6">
+                                    {{selectedPlugin.fqcn}}
+                                </div>
+                            </div>
+                            <div class="row" *ngIf="selectedPlugin.clientParams!=undefined">
+                                <div class="col-lg-6 col-md-6 col-xs-6 col-sm-6">
+                                    <b>Parameters</b>
+                                </div>
+                                <div class="col-lg-6 col-md-6 col-xs-6 col-sm-6">
+                                    <div *ngFor="let cp of selectedPlugin.clientParams" >
+                                        {{cp.name}}, type={{cp.type}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>

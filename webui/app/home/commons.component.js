@@ -42,7 +42,7 @@ var Commons = (function () {
         ldt.style.display = "block";
         var li = document.getElementById("loaderIcon");
         li.style.display = "none";
-        if (msg !== undefined) {
+        if (msg !== undefined && msg !== "") {
             alert(msg);
         }
         Commons.loaderTimer = setTimeout(function () {
@@ -57,6 +57,16 @@ var Commons = (function () {
     Commons.loaderError = function (output) {
         alert(output);
     };
+    Commons.toast = function (options) {
+        var o = {
+            content: "Ola!",
+            timeout: 2000
+        };
+        if (options != undefined && options != null && options != "") {
+            o = options;
+        }
+        $.snackbar(o);
+    };
     Commons.loaderTimer = -1;
     Commons = __decorate([
         core_1.Injectable(), 
@@ -65,4 +75,51 @@ var Commons = (function () {
     return Commons;
 }());
 exports.Commons = Commons;
+var FilterPipe = (function () {
+    function FilterPipe() {
+    }
+    FilterPipe.prototype.transform = function (items, args) {
+        if (!items)
+            return [];
+        return items.filter(function (it) { if (args == "" || args == undefined || args == null) {
+            return true;
+        }
+        else {
+            return it.indexOf(args) !== -1;
+        } });
+    };
+    FilterPipe = __decorate([
+        core_1.Pipe({
+            name: 'filter'
+        }),
+        core_1.Injectable(), 
+        __metadata('design:paramtypes', [])
+    ], FilterPipe);
+    return FilterPipe;
+}());
+exports.FilterPipe = FilterPipe;
+var FilterPropsPipe = (function () {
+    function FilterPropsPipe() {
+    }
+    FilterPropsPipe.prototype.transform = function (items, args) {
+        var prop = args[0], val = args[1];
+        if (!items)
+            return [];
+        return items.filter(function (it) { if (args == "" || args == undefined || args == null) {
+            return true;
+        }
+        else {
+            return it[prop].indexOf(val) !== -1;
+        } });
+    };
+    FilterPropsPipe = __decorate([
+        core_1.Pipe({
+            name: 'filterProps'
+        }),
+        core_1.Injectable(), 
+        __metadata('design:paramtypes', [])
+    ], FilterPropsPipe);
+    return FilterPropsPipe;
+}());
+exports.FilterPropsPipe = FilterPropsPipe;
 //# sourceMappingURL=commons.component.js.map

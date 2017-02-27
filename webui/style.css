@@ -70,5 +70,39 @@ body {
     top: 120px; }
   body .nav.nav-light-orange {
     background: #ff6838; }
+  body .center-text {
+    text-align: center; }
+  body .h1-big {
+    font-size: 72px; }
+  body .navbar-brand {
+    background-color: #ff6231;
+    color: white; }
+  body #snackbar-container {
+    position: fixed;
+    left: 20px;
+    bottom: 0;
+    z-index: 99999; }
+  body .snackbar {
+    overflow: hidden;
+    clear: both;
+    min-width: 288px;
+    max-width: 568px;
+    cursor: pointer;
+    opacity: 0; }
+  body .snackbar.snackbar-opened {
+    height: auto;
+    opacity: 1; }
+  @media (max-width: 767px) {
+    body #snackbar-container {
+      left: 0 !important;
+      right: 0;
+      width: 100%; }
+    body #snackbar-container .snackbar {
+      min-width: 100%; }
+    body #snackbar-container [class="snackbar snackbar-opened"] ~ .snackbar.toast {
+      margin-top: 20px; }
+    body #snackbar-container [class="snackbar snackbar-opened"] {
+      border-radius: 0;
+      margin-bottom: 0; } }
 
 /*# sourceMappingURL=style.css.map */

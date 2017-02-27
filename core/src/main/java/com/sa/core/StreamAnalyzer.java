@@ -34,9 +34,7 @@ import org.apache.spark.api.java.JavaSparkContext;
  * @author arunsharma
  */
 public class StreamAnalyzer {
-
     private final static Logger logger = Logger.getLogger(StreamAnalyzer.class);
-
     private static StreamAnalyzer instance;
     private static JavaSparkContext context;
     private static ConfigurationManager config;
@@ -60,10 +58,10 @@ public class StreamAnalyzer {
                 try {
                     initializeArguments(args);
                     //check all arguments to the program and config accordingly
-                    
-                    sparkMasterURL = System.getProperty("sparkMasterURL") == null?"localhost":System.getProperty("sparkMasterURL");
+
+                    sparkMasterURL = System.getProperty("sparkMasterURL") == null ? "localhost[*]" : System.getProperty("sparkMasterURL");
                     String name = arguments.get("applicationName") == null ? "Default" : arguments.get("applicationName");
-                    context = new JavaSparkContext(sparkMasterURL, name+"__" + UUID.randomUUID());
+                    context = new JavaSparkContext(sparkMasterURL, name + "__" + UUID.randomUUID());
                 } catch (Exception ex) {
                     logger.error("Error while initializing spark context : ", ex);
                     return null;
@@ -87,7 +85,7 @@ public class StreamAnalyzer {
     private static void initializeArguments(String[] args) {
         if (args.length <= 0) {
             return;
-        } 
+        }
         arguments = new HashMap<String, String>();
         for (String arg : args) {
             if (arg.startsWith("--variable:")) {
@@ -95,7 +93,7 @@ public class StreamAnalyzer {
                     String k = arg.split("::")[1].split("=")[0];
                     String v = arg.split("::")[1].split("=")[1];
                     arguments.put(k, v);
-                    System.setProperty(k,v);
+                    System.setProperty(k, v);
                 } catch (Exception ex) {
                     System.err.println("Invalid variable specified : " + arg);
                     ex.printStackTrace();
@@ -103,10 +101,24 @@ public class StreamAnalyzer {
             }
         }
 
+        if (arguments.get("applicationName") == null) {
+            arguments.put("applicationName", "Default");
+            System.setProperty("applicationName", "Default");
+        }
+        
+//        if (arguments.get("hdfsMaster") == null) {
+//            arguments.put("hdfsMaster", "");
+//            System.setProperty("applicationName", "Default");
+//        }
+
+    }
+
+    private String getProperty(String key) {
+        return arguments == null ? null : arguments.get(key);
     }
     
-    private String getProperty(String key) {
-        return arguments==null?null:arguments.get(key);
+    public  Map<String,String> getProperties() {
+        return new HashMap<>(arguments);
     }
 
     public JavaSparkContext getContext() {

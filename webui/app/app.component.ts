@@ -27,12 +27,21 @@ import {Router} from '@angular/router';
 
 export class AppComponent {
     title = 'THS';
+    loggedIn = false;
     constructor(public router:Router) {
         
         if(requestedURL!==undefined && requestedURL!=="") {
             this.router.navigate([requestedURL]);
         }
+        
+        if(document.cookie=="loggedin=true") {
+            this.loggedIn = true;
+        }
             
     }
     
+    public logout() {
+        document.cookie="";
+        window.location.reload();
+    }
 }

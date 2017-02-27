@@ -80,8 +80,13 @@ exports.compileProject = function (req, res) {
         var compile = new fs.run_cmd("java",
                 ["-jar",
                     app.conf.compiler.path + "/" + app.conf.compiler.executable,
-                    "VERBOSE", "--variable:pluginsPath=" + app.conf.plugins.path, "COMPILE", app.conf.projects.localPath + "/" + req.body.name,
-                    app.conf.projects.localPath + "/" + req.body.name]);
+                    "VERBOSE",
+                    "--variable:pluginsPath=" + app.conf.plugins.path,
+                     "--variable:coreLibPath=" + app.conf.library.core.path,
+                    "COMPILE",
+                    app.conf.projects.localPath + "/" + req.body.name,
+                    app.conf.projects.localPath + "/" + req.body.name
+                ]);
         
         return res.json({status:"OK",msg:"Command Executed!",output:compile.stdout.toString(),error:compile.stderr.toString()});
         
