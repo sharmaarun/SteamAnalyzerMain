@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.sa.compiler.commons.EntityTypeEnums;
+import com.sa.compiler.entities.Connection;
 import com.sa.compiler.entities.StreamStage;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,13 +22,15 @@ import java.util.List;
 public class Parser {
 
     private List<StreamStage> streamStages;
+    private List<Connection> connections;
     private ObjectMapper mapper;
 
-    private boolean stagesParsed;
+    private boolean stagesParsed,connectionsParsed;
 
     public Parser() {
         mapper = new ObjectMapper();
         streamStages = new ArrayList<>();
+        connections = new ArrayList<>();
     }
 
     private void parseStages(ArrayNode stages) {
@@ -35,20 +38,31 @@ public class Parser {
         //JsonNode[] sub_stages = stages.
         try {
             for (JsonNode node : stages) {
-                EntityTypeEnums ntype = EntityTypeEnums.valueOf(node.get("type").asText());
-                switch (ntype) {
-                    case STREAM_STAGE: {
                         StreamStage stage = mapper.treeToValue(node, StreamStage.class);
                         streamStages.add(stage);
-                        continue;
-                    }
-                }
             }
             stagesParsed = true;
         } catch (Exception ex) {
-            System.out.println("Error: Could not parse supplied JSON");
+            System.out.println("Error: Could not parse stages!" + ex);
             ex.printStackTrace();
             stagesParsed = false;
+            return;
+        }
+    }
+
+    private void parseConnections(ArrayNode conns) {
+
+        //JsonNode[] sub_stages = stages.
+        try {
+            for (JsonNode node : conns) {
+                Connection c = mapper.treeToValue(node, Connection.class);
+                connections.add(c);
+            }
+            connectionsParsed = true;
+        } catch (Exception ex) {
+            System.out.println("Error: Could not parse connections!" + ex);
+            ex.printStackTrace();
+            connectionsParsed = false;
             return;
         }
     }
@@ -56,18 +70,20 @@ public class Parser {
     public boolean parse(String inputJSON) {
         try {
             JsonNode topology = mapper.readTree(inputJSON);
-            ArrayNode stages = (ArrayNode)topology.get("stages");
-            
+            ArrayNode stages = (ArrayNode) topology.get("stages");
+            ArrayNode connects = (ArrayNode) topology.get("connections");
             //parse the stages
             parseStages(stages);
-            
-            return stagesParsed;
-            
+            //parse connections
+            parseConnections(connects);
+
+            return stagesParsed && connectionsParsed;
+
         } catch (Exception ex) {
             System.out.println("Error: Could not parse supplied JSON");
             ex.printStackTrace();
             return false;
-            
+
         }
 
     }
@@ -78,6 +94,14 @@ public class Parser {
 
     public void setStreamStages(List<StreamStage> streamStages) {
         this.streamStages = streamStages;
+    }
+
+    public List<Connection> getConnections() {
+        return connections;
+    }
+
+    public void setConnections(List<Connection> connections) {
+        this.connections = connections;
     }
     
     

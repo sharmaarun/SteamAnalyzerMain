@@ -74,6 +74,18 @@ export class Commons {
 }
 
 @Pipe({
+    name: 'filterProjects'
+})
+@Injectable()
+export class FilterProjectsPipe implements PipeTransform {
+    transform(items:any[], args?):any[] { 
+        if (!items) return [];        
+        return items.filter(it => {if(args=="" || args==undefined || args==null){ return true; } else {return it.displayName==undefined?false:it.displayName.indexOf(args)!==-1}});
+    }
+}
+
+
+@Pipe({
     name: 'filter'
 })
 @Injectable()
@@ -91,6 +103,7 @@ export class FilterPipe implements PipeTransform {
 export class FilterPropsPipe implements PipeTransform {
     transform(items:any[],  args?):any[] { 
         let [prop,val] = args;
+        if (prop==undefined) return [];
         if (!items) return [];        
         return items.filter(it => {if(args=="" || args==undefined || args==null){ return true; } else {return it[prop].indexOf(val)!==-1}});
     }

@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 
 /**
@@ -34,6 +35,7 @@ import org.apache.spark.api.java.JavaSparkContext;
  * @author arunsharma
  */
 public class StreamAnalyzer {
+
     private final static Logger logger = Logger.getLogger(StreamAnalyzer.class);
     private static StreamAnalyzer instance;
     private static JavaSparkContext context;
@@ -61,6 +63,9 @@ public class StreamAnalyzer {
 
                     sparkMasterURL = System.getProperty("sparkMasterURL") == null ? "localhost[*]" : System.getProperty("sparkMasterURL");
                     String name = arguments.get("applicationName") == null ? "Default" : arguments.get("applicationName");
+                    SparkConf conf = new SparkConf();
+                    conf.setAppName(name)
+                            .setMaster(sparkMasterURL).set("spark.scheduler.mode", "FAIR");
                     context = new JavaSparkContext(sparkMasterURL, name + "__" + UUID.randomUUID());
                 } catch (Exception ex) {
                     logger.error("Error while initializing spark context : ", ex);
@@ -105,19 +110,18 @@ public class StreamAnalyzer {
             arguments.put("applicationName", "Default");
             System.setProperty("applicationName", "Default");
         }
-        
+
 //        if (arguments.get("hdfsMaster") == null) {
 //            arguments.put("hdfsMaster", "");
 //            System.setProperty("applicationName", "Default");
 //        }
-
     }
 
     private String getProperty(String key) {
         return arguments == null ? null : arguments.get(key);
     }
-    
-    public  Map<String,String> getProperties() {
+
+    public Map<String, String> getProperties() {
         return new HashMap<>(arguments);
     }
 

@@ -24,6 +24,7 @@ package com.sa.core;
 import com.sa.core.commons.dto.RDDDTO;
 import java.util.List;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.streaming.api.java.JavaDStream;
 
 /**
  * Interface describing a stage as capable of doing I/O
@@ -38,6 +39,6 @@ public interface IConnector {
     /**
      * Should be implemented to let the next stage poll the data from this stage.
      */
-    RDDDTO poll();
+    JavaDStream<String> poll();
     
 }

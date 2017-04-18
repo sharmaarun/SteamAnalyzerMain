@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -39,17 +40,34 @@ import org.apache.spark.streaming.api.java.JavaStreamingContext;
  * @author arunsharma
  */
 public abstract class StreamBase implements Serializable{
-    public static int idCounter= 0;
-    public JavaSparkContext sc;
-    public StreamAnalyzer sa;
-    public JavaStreamingContext tsc;
+    public transient JavaSparkContext sc;
+    public transient StreamAnalyzer sa;
+    public transient JavaStreamingContext jsc;
+    public String inputStreamPath;
+    public HashMap<String,String> properties;
+    private int id;
     public StreamBase(JavaSparkContext sc, StreamAnalyzer sa) {
-        idCounter+=1;
         this.sc = sc;
         this.sa = sa;
+        properties = new HashMap<>();
     }
+    
+    public StreamBase(JavaSparkContext sc, StreamAnalyzer sa, HashMap<String,Object> metadata) {
+        this(sc,sa);
+        //update properties
+        this.updateProperties(metadata);
+    }
+    
+    public void updateProperties(HashMap<String,Object> metadata) {
+        if(metadata!=null)
+        for(String k: metadata.keySet()) {
+            properties.put(k, (String)metadata.get(k));
+        }
+    }
+    
     public abstract void start();
     public abstract String getCheckpointPath();
+    public abstract void setInputStreamPath(String path);
     /**
      * Read the object from Base64 string.
      */
@@ -68,4 +86,51 @@ public abstract class StreamBase implements Serializable{
         }
         return o;
     }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public JavaSparkContext getSc() {
+        return sc;
+    }
+
+    public void setSc(JavaSparkContext sc) {
+        this.sc = sc;
+    }
+
+    public StreamAnalyzer getSa() {
+        return sa;
+    }
+
+    public void setSa(StreamAnalyzer sa) {
+        this.sa = sa;
+    }
+
+    public JavaStreamingContext getJsc() {
+        return jsc;
+    }
+
+    public void setJsc(JavaStreamingContext jsc) {
+        this.jsc = jsc;
+    }
+
+    public String getInputStreamPath() {
+        return inputStreamPath;
+    }
+
+    public HashMap<String, String> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(HashMap<String, String> properties) {
+        this.properties = properties;
+    }
+    
+    
+    
 }

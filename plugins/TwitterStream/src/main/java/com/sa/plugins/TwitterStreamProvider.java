@@ -21,119 +21,126 @@
  */
 package com.sa.plugins;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.sa.core.IConnector;
 import com.sa.core.StreamAnalyzer;
 import com.sa.core.StreamBase;
 import com.sa.core.commons.dto.RDDDTO;
-import java.beans.Transient;
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import javafx.util.Duration;
-import org.apache.spark.Accumulator;
+import java.util.Timer;
+import java.util.TimerTask;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Seconds;
 import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.twitter.*;
+import org.scalatest.concurrent.TimeoutTask;
 import twitter4j.Status;
 
 /**
  * One of the base components used to provide social tweets stream.
+ *
  * @author arunsharma
  */
 public class TwitterStreamProvider extends StreamBase implements IConnector {
 
     private Map<String, String> creds;
     JavaDStream<Status> stream;
-    private JavaRDD<String> inputBuffer; //TODO: make it more flexible
-    private StreamAnalyzer sa;
-    private int id;
+    private JavaDStream<String> output; //TODO: make it more flexible
+//    private StreamAnalyzer sa;
+
     public TwitterStreamProvider(JavaSparkContext _sc, StreamAnalyzer sa) {
         super(_sc, sa);
         sc = _sc;
         this.sa = sa;
-        tsc = new JavaStreamingContext(sc, Seconds.apply(1));
-        
+        jsc = new JavaStreamingContext(sc, Seconds.apply(1));
+
         //initialize the input buffer. It serves as the temporary memory storage of incoming tweets.
         //TODO: make this persist into a file in hdfs
-        inputBuffer = sc.emptyRDD();
-        id = idCounter;
-        System.out.println("Initialized Twitter Stream Provider : " + id);
+        System.out.println("Initialized Twitter Stream Provider : " + getId());
     }
-    
+
     /**
-     * This method helps the plugin/component to operate on meta-data and do initialization before class instantiation.
-     * 
-     * This method should return a string the represents the initialization code. For this plugin, we need to initialize the
-     * credential info. Hence we create a code-string that doesn't depend on variables but hard coded string values instead.
-     * @param metadata 
+     * This method helps the plugin/component to operate on meta-data and do
+     * initialization before class instantiation.
+     *
+     * This method should return a string the represents the initialization
+     * code. For this plugin, we need to initialize the credential info. Hence
+     * we create a code-string that doesn't depend on variables but hard coded
+     * string values instead.
+     *
+     * @param metadata
      */
-    public void preload(HashMap<String,Object> metadata) {
+    public void preload(HashMap<String, Object> metadata) {
         try {
-        String ck = (String)metadata.get("consumer_key");
-        String cs = (String) metadata.get("consumer_secret");
-        String at = (String) metadata.get("access_token");
-        String ats = (String) metadata.get("access_token_secret");
-        //set twitter auth creds
-        System.out.println("-------------------Key :" +  ck);
-        System.setProperty("twitter4j.oauth.consumerKey",ck);
-        System.setProperty("twitter4j.oauth.consumerSecret",cs);
-        System.setProperty("twitter4j.oauth.accessToken", at);
-        System.setProperty("twitter4j.oauth.accessTokenSecret", ats);
-        
-        //create a twitter stream using spark streaing context
-        stream = TwitterUtils.createStream(tsc);
-        } catch(Exception ex ){
+
+            // update properties
+            updateProperties(metadata);
+
+            String ck = (String) metadata.get("consumer_key");
+            String cs = (String) metadata.get("consumer_secret");
+            String at = (String) metadata.get("access_token");
+            String ats = (String) metadata.get("access_token_secret");
+
+            System.setProperty("twitter4j.oauth.consumerKey", ck);
+            System.setProperty("twitter4j.oauth.consumerSecret", cs);
+            System.setProperty("twitter4j.oauth.accessToken", at);
+            System.setProperty("twitter4j.oauth.accessTokenSecret", ats);
+
+            //create a twitter stream using spark streaing context
+            stream = TwitterUtils.createStream(jsc);
+        } catch (Exception ex) {
             System.out.println("Could not initialize plugin : ");
             ex.printStackTrace();
         }
+
     }
-    
+
+    @Override
+    public void setInputStreamPath(String path) {
+        this.inputStreamPath = path;
+    }
+
     /**
      * TODO: Remove it
      */
     @Override
     public void fetch() {
-        
+
     }
-   
+
     /**
-     * used by other stages to poll data from the temporary memory. i.e. the bunch of tweets received in last iteration.
-     * @return 
+     * used by other stages to poll data from the temporary memory. i.e. the
+     * bunch of tweets received in last iteration.
+     *
+     * @return
      */
     @Override
-    public RDDDTO poll() {
-        
-        return null;
+    public JavaDStream<String> poll() {
+
+        return this.output;
     }
-    
+
     @Override
     public String getCheckpointPath() {
-        if(sa.getProperties().get("hdfsMaster")!=null) {
-            return sa.getProperties().get("hdfsMaster")+"/"+sa.getProperties().get("checkpointPath")+"/tsp"+id;
+        if (sa.getProperties().get("hdfsMaster") != null) {
+            return sa.getProperties().get("hdfsMaster") + "/" + sa.getProperties().get("checkpointPath") + "/TwitterStream" + getId() + "/";
         }
         return null;
     }
-    
+
     /**
      * starts the stream of tweets
      */
     @Override
     public void start() {
         try {
-            TweetFetcher.fetch(this,stream,inputBuffer); //workaround to escape from serialization of the whole class.
-            tsc.start();
-            tsc.awaitTermination();
+            output = TweetFetcher.fetch(this, stream, output); //workaround to escape from serialization of the whole class.
+
         } catch (Exception ex) {
-            System.out.println(ex);
+            ex.printStackTrace(System.out);
         }
     }
 
@@ -144,15 +151,5 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
     public void setCreds(Map<String, String> creds) {
         this.creds = creds;
     }
-
-    public StreamAnalyzer getSa() {
-        return sa;
-    }
-
-    public int getId() {
-        return id;
-    }
-    
-    
 
 }

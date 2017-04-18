@@ -34,7 +34,7 @@ export class AppComponent {
             this.router.navigate([requestedURL]);
         }
         
-        if(document.cookie=="loggedin=true") {
+        if(document.cookie.match("loggedin=true")!=null) {
             this.loggedIn = true;
         }
             

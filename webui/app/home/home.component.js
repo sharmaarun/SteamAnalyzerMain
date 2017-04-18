@@ -85,9 +85,11 @@ var HomeComponent = (function () {
         this.lineChartType = 'line';
         this.lineChartLabelUpdate = this.lineChartLabels[6];
         this.flag = false;
-        if (document.cookie == "loggedin=true") {
+        if (document.cookie.match("loggedin=true") != null) {
+            console.log("Loggedin.");
             this.loggedIn = true;
         }
+        console.log(document.cookie);
         if (this.loggedIn)
             this.init();
     }
@@ -183,7 +185,7 @@ var HomeComponent = (function () {
         core_1.Component({
             templateUrl: 'app/home/home.component.html',
             providers: [http_1.HTTP_PROVIDERS],
-            pipes: [commons_component_1.FilterPipe]
+            pipes: [commons_component_1.FilterPipe, commons_component_1.FilterProjectsPipe]
         }), 
         __metadata('design:paramtypes', [http_1.Http])
     ], HomeComponent);

@@ -81,7 +81,7 @@ public class Compiler {
     }
 
     public String buildMavenProject(String path) throws IOException, InterruptedException {
-        Process p = Runtime.getRuntime().exec("mvn -f "+ path+"/pom.xml clean compile assembly:single");
+        Process p = Runtime.getRuntime().exec("mvn -e -f "+ path+"/pom.xml clean compile assembly:single");
         p.waitFor();
         BufferedReader reader
                 = new BufferedReader(new InputStreamReader(p.getInputStream()));

@@ -75,6 +75,29 @@ var Commons = (function () {
     return Commons;
 }());
 exports.Commons = Commons;
+var FilterProjectsPipe = (function () {
+    function FilterProjectsPipe() {
+    }
+    FilterProjectsPipe.prototype.transform = function (items, args) {
+        if (!items)
+            return [];
+        return items.filter(function (it) { if (args == "" || args == undefined || args == null) {
+            return true;
+        }
+        else {
+            return it.displayName == undefined ? false : it.displayName.indexOf(args) !== -1;
+        } });
+    };
+    FilterProjectsPipe = __decorate([
+        core_1.Pipe({
+            name: 'filterProjects'
+        }),
+        core_1.Injectable(), 
+        __metadata('design:paramtypes', [])
+    ], FilterProjectsPipe);
+    return FilterProjectsPipe;
+}());
+exports.FilterProjectsPipe = FilterProjectsPipe;
 var FilterPipe = (function () {
     function FilterPipe() {
     }
@@ -103,6 +126,8 @@ var FilterPropsPipe = (function () {
     }
     FilterPropsPipe.prototype.transform = function (items, args) {
         var prop = args[0], val = args[1];
+        if (prop == undefined)
+            return [];
         if (!items)
             return [];
         return items.filter(function (it) { if (args == "" || args == undefined || args == null) {

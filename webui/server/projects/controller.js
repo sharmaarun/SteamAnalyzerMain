@@ -52,7 +52,29 @@ exports.saveProject = function (req, res) {
 
 exports.list = function (req, res) {
     fs.list(app.conf.projects.localPath, function (l) {
-        return res.json(l);
+        var out = [];
+        for (ll of l) {
+            try {
+                out.push(JSON.parse(fs.readFileSync(app.conf.projects.localPath + "/" + ll + "/topology.json")));
+            } catch (e) {
+                console.log("could not read : " + ll);
+            }
+        }
+
+        return res.json(out);
+    });
+}
+
+exports.readTopologies = function (list, out, callback) {
+    if (list.length <= 0) {
+        callback(out);
+        return;
+    }
+    fs.list(app.conf.projects.localPath + "/" + list[0] + "/topology.json", function (t) {
+
+        list.splice(0, 1);
+        out.push(t);
+        exports.readTopologies(list, out);
     });
 }
 
@@ -82,15 +104,15 @@ exports.compileProject = function (req, res) {
                     app.conf.compiler.path + "/" + app.conf.compiler.executable,
                     "VERBOSE",
                     "--variable:pluginsPath=" + app.conf.plugins.path,
-                     "--variable:coreLibPath=" + app.conf.library.core.path,
+                    "--variable:coreLibPath=" + app.conf.library.core.path,
                     "COMPILE",
                     app.conf.projects.localPath + "/" + req.body.name,
                     app.conf.projects.localPath + "/" + req.body.name
                 ]);
-        
-        return res.json({status:"OK",msg:"Command Executed!",output:compile.stdout.toString(),error:compile.stderr.toString()});
-        
-        
+
+        return res.json({status: "OK", msg: "Command Executed!", output: compile.stdout.toString(), error: compile.stderr.toString()});
+
+
 
     } catch (e) {
         console.log(e);

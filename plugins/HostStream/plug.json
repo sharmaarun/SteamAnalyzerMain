@@ -1,0 +1,22 @@
+{
+	"name":"HostStream",
+	"_v":"1.0.0",
+	"type":"STREAM_STAGE",
+	"plugin":"HostStream",
+	"fqcn":"com.sa.plugins.HostStreamProvider",
+	"package":"com.sa.plugins",
+        "jar":"target/SAHostStream-1.0-SNAPSHOT.jar",
+	"description" : "A plugin that captures incoming raw text strings from specified host and port.",
+	"clientParams":[
+	{
+		"type":"text",
+		"name":"Host Name",
+		"param":"hostname"
+		},
+	{
+                "type":"text",
+                "name":"Port",
+                "param":"port"
+                }
+	]
+}

@@ -62,13 +62,13 @@ limitations under the License.
 
                     <div class="container-fluid">
                         <div class="row">
-                            <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12" *ngFor="let r of reports | filter : filterReports">
+                            <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12" *ngFor="let r of reports | filterProjects :  filterReports ">
                                  <div class="panel">
-                                    <div class="panel-heading">{{r}}</div>
+                                    <div class="panel-heading">{{r.displayName}}</div>
                                     <div class="panel-body">
-                                        Report for project : {{r}}<br/>
+                                        Report for project : {{r.displayName}}<br/>
                                         Status : Currently Active <br/>
-                                        <button class="right btn btn-sm btn-raised tn-warning" [routerLink] = "['/report',r]">View</button>
+                                        <button class="right btn btn-sm btn-raised tn-warning" [routerLink] = "['/report',r.name]">View</button>
                                     </div>
                                 </div>
                             </div>

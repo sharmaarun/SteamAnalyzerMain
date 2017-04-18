@@ -33,58 +33,49 @@ import twitter4j.Status;
 
 /**
  * This class serves as base for doing all the spark related operations on RDDs.
+ *
  * @author arunsharma
  */
-public class TweetFetcher implements Serializable{
-    
+public class TweetFetcher implements Serializable {
+
     public TweetFetcher() {
-        
+
     }
-    
+
     //fetch the data/tweets into string stream array
-    public static void fetch(TwitterStreamProvider tsp, JavaDStream iStream, JavaRDD<String> output) {
-        
-        
-        JavaDStream<String> statuses = iStream.map(new Function<Status, String>() {
+    public static JavaDStream<String> fetch(TwitterStreamProvider tsp, JavaDStream iStream, JavaDStream<String> output) {
+
+        //setup the creds again for worker nodes
+        String ck = (String) tsp.getProperties().get("consumer_key");
+        String cs = (String) tsp.getProperties().get("consumer_secret");
+        String at = (String) tsp.getProperties().get("access_token");
+        String ats = (String) tsp.getProperties().get("access_token_secret");
+        System.setProperty("twitter4j.oauth.consumerKey", ck);
+        System.setProperty("twitter4j.oauth.consumerSecret", cs);
+        System.setProperty("twitter4j.oauth.accessToken", at);
+        System.setProperty("twitter4j.oauth.accessTokenSecret", ats);
+        output = iStream.map(new Function<Status, String>() {
             public String call(Status status) {
                 return status.getText();
             }
         });
-        
-        
+        return output;
         //save each bunch into the specified buffer
         //TODO: move to other function
-        
-        statuses.foreachRDD(new VoidFunction<JavaRDD<String>>() {
-            String cpPath = new String(tsp.getCheckpointPath());
-            
-            
-            @Override
-            public void call(JavaRDD<String> t1) {
-//                System.out.println("=================================");
-//                System.out.println("=================================");
-//                System.out.println("RDD id: " + t1.id());
-//                System.out.println("Count is " + t1.count());
-//                System.out.println("=================================");
-//                System.out.println("=================================");
-//              
-                System.out.println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-");
-                System.out.println(cpPath);
-                
-                t1.coalesce(1).saveAsTextFile(cpPath+"/rdd"+t1.id());
-                return;
-            }
-        });
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+//        statuses.foreachRDD(new VoidFunction<JavaRDD<String>>() {
+//            String cpPath = tsp.getCheckpointPath();
+//
+//            @Override
+//            public void call(JavaRDD<String> t1) {
+//
+//                try {
+//                    t1.coalesce(1).saveAsTextFile(cpPath + "/rdd" + t1.id());
+//                } catch (Exception ex) {
+//                    ex.printStackTrace(System.out);
+//                }
+//                return;
+//            }
+//        });
     }
-    
+
 }

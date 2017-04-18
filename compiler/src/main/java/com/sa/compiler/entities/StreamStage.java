@@ -17,7 +17,7 @@ public class StreamStage extends Stage{
     private JsonNode metadata;
     private String plugin;
     private String fqcn;
-
+    private JsonNode pos;
     public int getId() {
         return id;
     }
@@ -48,6 +48,14 @@ public class StreamStage extends Stage{
 
     public void setFqcn(String fqcn) {
         this.fqcn = fqcn;
+    }
+
+    public JsonNode getPos() {
+        return pos;
+    }
+
+    public void setPos(JsonNode pos) {
+        this.pos = pos;
     }
     
     

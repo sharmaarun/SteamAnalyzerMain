@@ -1,0 +1,17 @@
+{
+	"name":"Filter",
+	"_v":"1.0.0",
+	"type":"STREAM_STAGE",
+	"plugin":"Filter",
+	"fqcn":"com.sa.plugins.Filter",
+	"package":"com.sa.plugins",
+        "jar":"target/SAFilter-1.0-SNAPSHOT.jar",
+	"description" : "Plugin to generate reports based on data checkpoints",
+	"clientParams":[
+		{
+		"type":"text",
+		"name":"Search For(comma separated)",
+		"param":"items"
+		}
+	]
+}

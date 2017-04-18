@@ -7,6 +7,7 @@ package com.sa.compiler.parser;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sa.compiler.entities.Connection;
 import com.sa.compiler.entities.StreamStage;
 import com.sa.components.base.ComponentsMap;
 import com.sa.pomeditor.PomEditor;
@@ -46,12 +47,12 @@ public class ClassWriter {
 
     public boolean prepare(Parser parser) {
         PomEditor mavenProject = new PomEditor();
-        mavenProject.loadProject(projectPath+"/pom.xml");
+        mavenProject.loadProject(projectPath + "/pom.xml");
         System.out.println("Adding core library ...");
         mavenProject.removeProjectDependency(System.getProperty("coreLibPath"));
         //TODO: replace "maven" with variable value  v c
-        mavenProject.addProjectDependency(System.getProperty("coreLibPath"),"maven");
-        
+        mavenProject.addProjectDependency(System.getProperty("coreLibPath"), "maven");
+
         //imports
         String imports = ""
                 + "import com.sa.core.StreamAnalyzer;\n"
@@ -62,7 +63,7 @@ public class ClassWriter {
                 + "\n";
 
 //Get all the stages and connections and set fully qualified class names
-        String stagesCode = "";
+        String stagesCode = "", initCode = "";
         for (StreamStage stage : parser.getStreamStages()) {
 
             //TODO: remove below comment
@@ -81,8 +82,8 @@ public class ClassWriter {
                 //check if the plugin name matches plugin path specified
                 if (stage.getPlugin().equalsIgnoreCase(plugin)) {
                     stage.setFqcn(fqcn);
-                    imports += "import " + fqcn+" ; \n\n";
-                    
+                    imports += "import " + fqcn + " ; \n\n";
+
                     mavenProject.removeProjectDependency(pluginPath);
                     mavenProject.addProjectDependency(pluginPath, jar);
                 }
@@ -93,12 +94,11 @@ public class ClassWriter {
             }
 
             try {
-                
+
                 HashMap<String, Object> metaMap = new HashMap<>();
                 String serializedMetaMap = serialize(metaMap);
                 boolean metaDataFound = false;
                 try {
-                
 
                     //serialize the metadata
                     JsonNode data = stage.getMetadata();
@@ -110,18 +110,34 @@ public class ClassWriter {
 
                     serializedMetaMap = serialize(metaMap);
                     metaDataFound = true;
-                
+
                 } catch (Exception ex) {
                     System.out.println("Warning: No metadata found / Invalid metadata, skipping preloading!");
                     ex.printStackTrace();
                     metaDataFound = false;
                 }
 
-                stagesCode += stage.getFqcn() + " tsp_" + stage.getId() + " = new  " + stage.getFqcn() + "(sc, sa); \n\n";
+                initCode += stage.getFqcn() + " tsp_" + stage.getId() + " = new  " + stage.getFqcn() + "(sc, sa); \n\n";
                 if (metaDataFound) {
-                    stagesCode += "HashMap<String,Object> metaData = (HashMap<String,Object>)tsp_" + stage.getId() + ".deserialize(\"" + serializedMetaMap + "\");\n\n";
-                    stagesCode += "tsp_" + stage.getId() + ".preload(metaData); \n\n";
+                    stagesCode += "HashMap<String,Object> metaData_" + stage.getId() + " = (HashMap<String,Object>)tsp_" + stage.getId() + ".deserialize(\"" + serializedMetaMap + "\");\n\n";
+                    stagesCode += "tsp_" + stage.getId() + ".preload(metaData_" + stage.getId() + "); \n\n";
                 }
+                stagesCode += "tsp_" + stage.getId() + ".setId(" + stage.getId() + "); \n\n";
+
+                //check if the stage has any connections
+                int sid = -1;
+                for (Connection c : parser.getConnections()) {
+                    if (c.getE() == stage.getId()) {
+                        sid = c.getS();
+                        break;
+                    }
+                }
+
+                if (sid >= 0) {
+                    stagesCode += "tsp_" + stage.getId() + ".setInput(tsp_" + sid + ".poll()); \n\n";
+//                    stagesCode += "tsp_"+stage.getId()+".setInputStreamPath(tsp_"+sid+".getCheckpointPath()); \n\n";
+                }
+
                 stagesCode += "tsp_" + stage.getId() + ".start(); \n\n";
 
             } catch (Exception ex) {
@@ -131,6 +147,11 @@ public class ClassWriter {
             }
 
         }
+
+        //TODO: make it flexible
+        stagesCode = initCode + stagesCode;
+        stagesCode += "tsp_0.getJsc().start(); \n";
+        stagesCode += "tsp_0.getJsc().awaitTermination(); \n";
 
         //for each stage, based on it's type, append to the eventual code string, the resulting code corresponding to this stage
         //once the final code string is ready, write it to file
@@ -160,7 +181,7 @@ public class ClassWriter {
 
     public void write() throws FileNotFoundException, IOException {
 
-        FileOutputStream fos = new FileOutputStream(new File(projectPath+"/src/main/java/com/sa/SAEntryPoint.java"));
+        FileOutputStream fos = new FileOutputStream(new File(projectPath + "/src/main/java/com/sa/SAEntryPoint.java"));
         fos.write(code.getBytes());
         fos.close();
     }

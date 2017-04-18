@@ -16,12 +16,12 @@
 
 import { Component, ViewChildren } from '@angular/core';
 import {BaseChartDirective} from 'ng2-charts/ng2-charts';
-import {Commons, FilterPipe} from './commons.component';
+import {Commons, FilterPipe, FilterProjectsPipe} from './commons.component';
 import {HTTP_PROVIDERS, Http, Response, Headers, RequestOptions} from "@angular/http";
 @Component({
     templateUrl: 'app/home/home.component.html',
     providers: [HTTP_PROVIDERS],
-    pipes: [FilterPipe]
+    pipes: [FilterPipe, FilterProjectsPipe]
 })
 
 export class HomeComponent {
@@ -90,10 +90,11 @@ export class HomeComponent {
 
 
     constructor(public http:Http) {
-        if (document.cookie == "loggedin=true") {
+        if (document.cookie.match("loggedin=true")!=null) {
+            console.log("Loggedin.");
             this.loggedIn = true;
         }
-
+        console.log(document.cookie);
         if (this.loggedIn) this.init();
 
     }

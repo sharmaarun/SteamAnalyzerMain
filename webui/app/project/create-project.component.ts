@@ -67,8 +67,9 @@ export class CreateProjectPage {
 
     //objects
 
-    topology = { name: 'Untitiled' + new Date().getMilliseconds(), stages: [], connections: [] };
-
+    topology = { name: 'Untitiled' + new Date().getMilliseconds(),displayName:"", stages: [], connections: [] };
+    idCounter = 0;
+    conIdCounter = 0;
     connections = [];
     _tmpConnection;
     _selectedHole;
@@ -165,8 +166,8 @@ export class CreateProjectPage {
                 this.saTools[i].saImage = this.saToolSprites[0];
                 this.saTools[i].name = plug.name;
                 this.saTools[i].resizable = true;
-                this.saTools[i].size = { w: 200, h: 250 };
-                this.saTools[i].size = { w: 200, h: 250 };
+                this.saTools[i].size = { w: 150, h: 150 };
+                //                this.saTools[i].size = { w: 200, h: 250 };
                 this.saTools[i].properties = [];
                 for (var j = 0; j < plug.clientParams.length; j++) {
                     this.saTools[i].properties.push({
@@ -282,13 +283,15 @@ export class CreateProjectPage {
     public saUpdate() {
         //update connection curves
         this.connections.clear();
-        for (let p of this.connections.points) {
-            // p.clear();
-            this.connections.lineStyle(4, 0x000000, 1);
-            var ex = p.e.worldTransform.tx, ey = p.e.worldTransform.ty;
-            var sx = p.s.worldTransform.tx, sy = p.s.worldTransform.ty;
-            this.connections.moveTo(sx, sy);
-            this.connections.bezierCurveTo(sx + 50, sy + 50, ex - 50, ey, ex, ey);
+        if (this.connections.points) {
+            for (let p of this.connections.points) {
+                // p.clear();
+                this.connections.lineStyle(4, 0x000000, 1);
+                var ex = p.e.worldTransform.tx, ey = p.e.worldTransform.ty;
+                var sx = p.s.worldTransform.tx, sy = p.s.worldTransform.ty;
+                this.connections.moveTo(sx, sy);
+                this.connections.bezierCurveTo(sx + 50, sy + 50, ex - 50, ey, ex, ey);
+            }
         }
 
         if (this._tmpConnection != undefined) {
@@ -336,12 +339,10 @@ export class CreateProjectPage {
 
     public addObject(oobj) {
         // console.log(oobj);
+        console.log("Adding Object : " + this.idCounter);
         var obj = oobj.resizable ? this.getSpriteResizable(oobj.saImage, oobj.size.w, oobj.size.h) : this.getSprite(oobj.saImage);
-        if(oobj._id!==undefined) {
-            obj._id = oobj._id;
-        } else {
-            obj._id = new Date().getMilliseconds();
-        }
+        obj._id = this.idCounter;
+        this.idCounter += 1;
         //initialize visible/private properties
         this.initializeProperties(obj, oobj);
         //initialize controls
@@ -361,8 +362,12 @@ export class CreateProjectPage {
 
         // var inp = new _this_.saPixi.DOM.Sprite('<input type="text" placeholder="Name">',{x:10,y:10});
         // this.stage.addChild(inp);
-        
+
         this.stage.addChild(obj);
+        console.log(oobj.tpItem + "<<");
+        if(oobj.tpItem!=undefined)
+        this.topology.stages[oobj.tpItem].stageChild = obj;
+        console.log(obj);
         if (!this.preloadProject) { this.addObjToTopology(obj, oobj) };
 
 
@@ -380,7 +385,7 @@ export class CreateProjectPage {
 
     private showPropertiesEditor(obj) {
         this.saSelectedObject = obj;
-        
+
         $("#propertiesEditor").modal("show");
     }
 
@@ -395,13 +400,19 @@ export class CreateProjectPage {
         remove.mousedown = function(d) {
             _this_.stage.removeChild(obj);
             var p;
-            for (var i = 0; i < _this_.connections.points.length; i++) {
-                p = _this_.connections.points[i];
-                if (p.s.parent._id == obj._id || p.e.parent._id == obj._id) {
-                    _this_.connections.points.splice(i, 1);
-                    i--;
-                }
-            }
+//            for (var i = 0; i < _this_.connections.points.length; i++) {
+//                p = _this_.connections.points[i];
+//                if (p.s.parent._id == obj._id || p.e.parent._id == obj._id) {
+//                    _this_.connections.points.splice(i, 1);
+//                    i--;
+//                }
+//            }
+            var index1 = _this_.findItemIndex(_this_.connections.points,"s.parent._id",obj._id);
+            var index2 = _this_.findItemIndex(_this_.connections.points,"e.parent._id",obj._id);
+            
+            if(index1!=undefined && index1!=null)_this_.connections.points.splice(index1, 1);
+            if(index2!=undefined && index2!=null)_this_.connections.points.splice(index2, 1);
+            
             setTimeout(function() {
                 _this_.removeFromTopology(obj);
                 obj.destroy({ children: true });
@@ -433,13 +444,14 @@ export class CreateProjectPage {
         }
 
     }
-    
-    
+
+
     private addConnectionHoles(obj, top, right, bottom, left) {
         var _this_ = this;
         if (left) {
             //hole-l control
             var lhole = this.getSprite("app/images/hole.png");
+            lhole.name = "lhole";
             lhole.anchor.x = 0.5;
             lhole.anchor.y = 0.5;
             lhole.x = -(obj.width / 2);
@@ -456,6 +468,7 @@ export class CreateProjectPage {
         if (right) {
             //hole-r control
             var rhole = this.getSprite("app/images/hole.png");
+            rhole.name = "rhole";
             rhole.anchor.x = 0.5;
             rhole.anchor.y = 0.5;
             rhole.x = (obj.width / 2);
@@ -471,6 +484,7 @@ export class CreateProjectPage {
         } if (bottom) {
             //hole-r control
             var bhole = this.getSprite("app/images/hole.png");
+            bhole.name = "bhole";
             bhole.anchor.x = 0.5;
             bhole.anchor.y = 0.5;
             bhole.x = 0;
@@ -486,38 +500,54 @@ export class CreateProjectPage {
         }
         if (top) {
             //hole-r control
-            var bhole = this.getSprite("app/images/hole.png");
-            bhole.anchor.x = 0.5;
-            bhole.anchor.y = 0.5;
-            bhole.x = 0;
-            bhole.y = -obj.height / 2;
-            bhole.interactive = true;
-            bhole.mouseup = function(d) {
-                _this_.chMouseUp(d, bhole);
+            var thole = this.getSprite("app/images/hole.png");
+            thole.name = "thole";
+            thole.anchor.x = 0.5;
+            thole.anchor.y = 0.5;
+            thole.x = 0;
+            thole.y = -obj.height / 2;
+            thole.interactive = true;
+            thole.mouseup = function(d) {
+                _this_.chMouseUp(d, thole);
             };
-            bhole.mousedown = function(d) {
-                _this_.chMouseDown(d, bhole);
+            thole.mousedown = function(d) {
+                _this_.chMouseDown(d, thole);
             }
-            obj.addChild(bhole);
+            obj.addChild(thole);
         }
     }
 
     private chMouseUp(d, obj) {
         var _this_ = this;
+        console.log(_this_.connectMode);
         if (_this_.connectMode) {
             if (obj.parent._id == _this_._selectedHole.parent._id) {
-                
+                console.log("Same parent! Not connecting.");
             } else {
                 _this_._tmpConnection.e = obj;
                 _this_.connections.points.push(_this_._tmpConnection);
-                _this_._tmpConnection = undefined;
+                _this_.addConnectionToTopology(_this_._tmpConnection);
+
+
                 _this_.connectMode = false;
+                console.log("Connected.");
+                _this_._tmpConnection =undefined;
             }
         } else {
             _this_.connectMode = true;
             _this_._selectedHole = obj;
         }
         d.stopPropagation();
+    }
+
+    private addConnectionToTopology(conn) {
+        var _this_ = this;
+        _this_.topology.connections.push({
+            e: conn.e.parent._id,
+            s: conn.s.parent._id,
+            ehole: conn.e.name,
+            shole: conn.s.name,
+        });
     }
 
     private chMouseDown(d, obj) {
@@ -529,36 +559,39 @@ export class CreateProjectPage {
         //set default properties
         // obj.anchor.x = 0.5;
         // obj.anchor.y = 0.5;
+        oobj.pos = this.findItem(this.topology.stages,"id",obj._id);
+        oobj.pos = obj.pos==undefined?undefined:oobj.pos.pos;
         obj.properties = oobj.properties == undefined ? [] : oobj.properties;
-        obj.position.x = 200 * Math.random();
-        obj.position.y = 200;
-        obj.interactive = true;
+        obj.position.x = oobj.pos!=undefined?oobj.pos.x:200 * Math.random() + 30;
+        obj.position.y = oobj.pos!=undefined?oobj.pos.y:200;
         
+        obj.interactive = true;
+
         obj.name = oobj.plugin.name;
         //visible properties
-        
-        var _elementNum = 2;
-        for (var k of obj.properties) {
-            var kn = new this.saPixi.Text(k.name + ": ", { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
 
-            kn.x = -(obj.width / 2) + 20;
-            kn.y = -(obj.height / 2) + (20 * _elementNum);
-            var kv = new this.saPixi.Text( k.defaultValue, { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
-            if (this.projectName == "" || this.projectName == undefined || this.projectName == null) {
-                 kv.text = k.defaultValue;
-            }
-            else{
-                kv.text = k.nv;
-            }
-            kv.x = -(obj.width / 2) + 20 + kn.width + 20;
-            kv.y = -(obj.height / 2) + (20 * _elementNum);
-            obj.addChild(kn);
-            obj.addChild(kv);
-            _elementNum += 1;
-
-            k.object = kv;
-            k.nv = kv.text;
-        }
+        //        var _elementNum = 2;
+        //        for (var k of obj.properties) {
+        //            var kn = new this.saPixi.Text(k.name + ": ", { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
+        //
+        //            kn.x = -(obj.width / 2) + 20;
+        //            kn.y = -(obj.height / 2) + (20 * _elementNum);
+        //            var kv = new this.saPixi.Text( k.defaultValue, { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
+        //            if (this.projectName == "" || this.projectName == undefined || this.projectName == null) {
+        //                 kv.text = k.defaultValue;
+        //            }
+        //            else{
+        //                kv.text = k.nv;
+        //            }
+        //            kv.x = -(obj.width / 2) + 20 + kn.width + 20;
+        //            kv.y = -(obj.height / 2) + (20 * _elementNum);
+        //            obj.addChild(kn);
+        //            obj.addChild(kv);
+        //            _elementNum += 1;
+        //
+        //            k.object = kv;
+        //            k.nv = kv.text;
+        //        }
 
         //name
         var name = null;
@@ -572,8 +605,10 @@ export class CreateProjectPage {
     }
 
     public updateProperties() {
-        
+
         for (let inp of this.saSelectedObject.properties) {
+            console.log(inp);
+            inp.object={text:""};
             inp.object.text = inp.nv;
             for (let o of this.topology.stages) {
                 if (o.id == this.saSelectedObject._id) {
@@ -581,19 +616,21 @@ export class CreateProjectPage {
                 }
             }
         }
-        
+
     }
-    
+
     public removeFromTopology(obj) {
-        for(var i=0;i<this.topology.stages.length;i++) {
-            if(this.topology.stages[i].id==obj._id) {
-                this.topology.stages.splice(i,1);
+        for (var i = 0; i < this.topology.stages.length; i++) {
+            if (this.topology.stages[i].id == obj._id) {
+                this.topology.stages.splice(i, 1);
                 break;
             }
         }
-        
-        
+
+
     }
+    
+    
 
     public updateTopologyProperties(item, obj) {
         item.metadata = {};
@@ -627,28 +664,41 @@ export class CreateProjectPage {
             _this_.cross.visible = true;
         } else {
             _this_.dragging = false;
-
+            //update position of object in topology
+            var stage = _this_.findItemIndex(_this_.topology.stages,"id",data.target._id);
+            _this_.topology.stages[stage].pos = {x : data.target.transform.position._x, y: data.target.transform.position._y};
+            
         }
         _this_.dragMode = false;
     }
-
+    
+    private trimTopology(tp) {
+        for(var i=0;i<tp.stages.length;i++) {
+            tp.stages[i].stageChild=undefined;
+        }
+    }
     public save() {
         Commons.loaderShow();
+        //        this.topology.connections = this.connections.points;
         //fill up fixed props
+        // remove all the unwanted properties before save
+        this.trimTopology(this.topology);
         this.http.post('api/projects/save', { project: this.topology }, this.headers).map(response => response.json())
-            .subscribe(d => { console.log(d);
-            Commons.loaderDone();
-              }, e => { console.log(e); }, s => { console.log(s); });
+            .subscribe(d => {
+                console.log(d);
+                Commons.loaderDone();
+            }, e => { console.log(e); }, s => { console.log(s); });
 
 
     }
 
     public updateDrawableProperties(item, o, cb) {
-        
+
         for (var i = 0; i < o.properties.length; i++) {
             o.properties[i].nv = item.metadata[o.properties[i].param];
+            o.properties.object={text:""};
         }
-        
+
         cb(o);
     }
 
@@ -663,57 +713,122 @@ export class CreateProjectPage {
     private drawTopology(tp) {
         var _this_ = this;
         for (var i = 0; i < tp.stages.length; i++) {
-            var stg = tp.stages[i];
-            var oobj = JSON.parse(JSON.stringify(this.getTool(stg.plugin)));
-            oobj._id = stg.id;
+            var oobj = JSON.parse(JSON.stringify(this.getTool(tp.stages[i].plugin)));
+            oobj.tpItem = i;
             if (oobj !== undefined && oobj !== null) {
-                this.updateDrawableProperties(stg, oobj, function(o){
-                    
+                this.updateDrawableProperties(tp.stages[i], oobj, function(o) {
+                    _this_.idCounter = tp.stages[i].id;
                     _this_.addObject(o);
                 });
-               
+
 
             }
         }
+        //TODO: replace timeout
+        setTimeout(function() {
+            _this_.formatConnections(tp.connections);
+        }, 1000);
     }
 
+    private formatConnections(conn) {
+        var _this_ = this;
+        var s = {}, e = {};
+        console.log(this.connections);
+        for (let c of conn) {
+            console.log("For conn : ");
+            console.log(c);
+            for (var i = 0; i < _this_.topology.stages.length; i++) {
+                console.log("For stage : ");
+                console.log(_this_.topology.stages[i].id);
+                if (_this_.topology.stages[i].id == c.s) {
+                    for (var j = 0; j < _this_.topology.stages[i].stageChild.children.length; j++) {
+                        if (_this_.topology.stages[i].stageChild.children[j].name == c.shole) {
+                            s = _this_.topology.stages[i].stageChild.children[j];
+                        };
+                    }
+                }
+                if (this.topology.stages[i].id == c.e) {
+                    for (var j = 0; j < _this_.topology.stages[i].stageChild.children.length; j++) {
+                        if (_this_.topology.stages[i].stageChild.children[j].name == c.ehole) {
+                            e = _this_.topology.stages[i].stageChild.children[j];
+                        };
+                    }
+                }
+                
+            }
+
+
+            _this_.connections.points.push({
+                s: s, e: e
+            });
+        }
+
+    }
 
     public reload() {
 
         //get the project json
         this.http.post('/api/projects/json', { name: this.projectName }, this.headers).map(response => response.json())
             .subscribe(p => {
+                console.log(p);
                 this.topology = p;
                 this.topology.name = this.projectName;
                 this.preloadProject = true;
+                //this.connections.points = this.topology.connections;
                 this.drawTopology(this.topology);
                 this.preloadProject = false;
             }, e => { console.log(e); }, s => { console.log(s); });
 
 
     }
-    
+
     public compile() {
         Commons.loaderShow();
         this.http.post('/api/projects/compile', { name: this.projectName }, this.headers).map(response => response.json())
             .subscribe(p => {
-                if(p.output!==undefined && p.output!==null && p.output!==""){
+                if (p.output !== undefined && p.output !== null && p.output !== "") {
                     Commons.loaderDone(p.output);
                 } else
-                if(p.error!==undefined && p.error!==null && p.error!==""){
-                    Commons.loaderDone(p.error);
-                } else {
-                    Commons.loaderDone(p.msg);
-                }
-                
-              
-            }, e => { Commons.loaderDone(e);
-                }, s => { console.log(s); });
+                    if (p.error !== undefined && p.error !== null && p.error !== "") {
+                        Commons.loaderDone(p.error);
+                    } else {
+                        Commons.loaderDone(p.msg);
+                    }
+
+
+            }, e => {
+                Commons.loaderDone(e);
+            }, s => { console.log(s); });
 
     }
-    
+
     public run() {
-        Commons.toast({content:"Can not run right now. Execution engine seems to be not responding.<br/> Try again later!",timeout:5000,htmlAllowed:true});
+        Commons.toast({ content: "Can not run right now. Execution engine seems to be not responding.<br/> Try again later!", timeout: 5000, htmlAllowed: true });
+    }
+
+    private findItem(arr, attr, val) {
+        var attrs = attr.split('.');
+        for (var i = 0; i < arr.length; i++) {
+            var obj = arr[i];
+            for (var j = 0; j < attrs.length; j++) {
+                if (obj == undefined) break;
+                obj = obj[attrs[j]];
+                if (j == attrs.length - 1 && obj == val) { return arr[i]; }
+            }
+        }
+
+    }
+    private findItemIndex(arr, attr, val) {
+        var attrs = attr.split('.');
+        for (var i = 0; i < arr.length; i++) {
+            var obj = arr[i];
+            for (var j = 0; j < attrs.length; j++) {
+                if (obj == undefined) break;
+                obj = obj[attrs[j]];
+                if (j == attrs.length - 1 && obj == val) { return i; }
+            }
+        }
+
     }
 
 }

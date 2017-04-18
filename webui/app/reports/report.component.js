@@ -36,9 +36,9 @@ var ReportPage = (function () {
         this.loadedCharts = false;
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this.lineChartData = [
-            { data: [65, 59, 80, 81, 56, 55, 40], label: 'Main Project' }
+            { data: [0], label: 'Main Project' }
         ];
-        this.lineChartLabels = ['1', '2', '3', '4', '5', '6', '7'];
+        this.lineChartLabels = ['0'];
         this.lineChartOptions = {
             animation: false,
             responsive: true
@@ -70,6 +70,9 @@ var ReportPage = (function () {
             }
         ];
         this.lineChartType = "line";
+        this.oldCount = 0;
+        this.lcc = 0;
+        this.runOnce = true;
         var _this_ = this;
         //load the plugins
         setTimeout(function () {
@@ -92,12 +95,30 @@ var ReportPage = (function () {
         });
     };
     ReportPage.prototype.getUpdates = function () {
-        var _this = this;
         //fetch projects 
+        var _this_ = this;
+        var nc = 0;
         this.http.get('/api/reports', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
-            console.log(_this.plugins);
-            _this.plugins = d;
-            console.log(_this.plugins);
+            d = JSON.parse(d);
+            console.log(d);
+            if (_this_.runOnce) {
+                _this_.oldCount = d.data.count;
+                _this_.runOnce = false;
+            }
+            else {
+                if (_this_.oldCount != d.data.count) {
+                    nc = d.data.count - _this_.oldCount;
+                }
+                else {
+                    nc = 0;
+                }
+            }
+            _this_.appendVal(_this_.lineChartData[0].data, nc);
+            _this_.appendVal(_this_.lineChartLabels, d.data.date);
+            _this_.lineChartData[0].label = d.data.stream_label;
+            console.log(_this_.lineChartData);
+            _this_.oldCount = d.data.count;
+            console.log("nc : " + nc + " lcc: " + _this_.lcc + "count : " + d.data.count);
         }, function (e) {
             console.log("Cound not fetch projects list!");
         }, function (s) {
@@ -106,7 +127,8 @@ var ReportPage = (function () {
     };
     ReportPage.prototype.updateFunction = function () {
         var _this_ = this;
-        _this_.appendRandom(_this_.lineChartData[0].data);
+        _this_.getUpdates();
+        //_this_.appendRandom(_this_.lineChartData[0].data);
         _this_.chartsRef.lineChart.ngOnChanges({});
     };
     ReportPage.prototype.appendRandom = function (arr) {
@@ -118,6 +140,18 @@ var ReportPage = (function () {
             }
         }
         arr[arr.length - 1] = Math.random() * 100;
+    };
+    ReportPage.prototype.appendVal = function (arr, val) {
+        //        var tmp = 0;
+        //        console.log(arr.length);
+        //        for (var i = 0; i < arr.length; i++) {
+        //            tmp = arr[i];
+        //            if (i < arr.length - 1) {
+        //                arr[i] = arr[i + 1];
+        //            }
+        //        }
+        //        arr[arr.length - 1] = val;
+        arr.push(val);
     };
     __decorate([
         core_1.ViewChildren(ng2_charts_1.BaseChartDirective), 

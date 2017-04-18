@@ -1,7 +1,7 @@
 {
 	"name":"Report",
 	"_v":"1.0.0",
-	"type":"Report_STAGE",
+	"type":"STREAM_STAGE",
 	"plugin":"Report",
 	"fqcn":"com.sa.plugins.ReportGenerator",
 	"package":"com.sa.plugins",
@@ -10,8 +10,16 @@
 	"clientParams":[
 		{
 		"type":"text",
-		"name":"Parameters",
-		"param":"parameters"
+		"name":"Horizontal Axis Label",
+		"param":"x_label"
+		}, {
+		"type":"text",
+		"name":"Vertical Axis Label",
+		"param":"y_label"
+		}, {
+		"type":"text",
+		"name":"Stream Label",
+		"param":"stream_label"
 		}
 	]
 }

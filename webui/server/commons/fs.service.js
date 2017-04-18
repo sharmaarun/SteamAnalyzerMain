@@ -114,6 +114,10 @@ exports.run_cmd = function(cmd, args) {
     return {};
 }
 
+exports.readFileSync = function(path) {
+    return fs.readFileSync(path,"utf-8");
+}
+
 
 
 module.exports = exports;

@@ -27,6 +27,11 @@
                 "type":"text",
                 "name":"Access Token Secret",
                 "param":"access_token_secret"
-                }
+                },
+		{
+		"type":"textarea",
+		"name":"Schema",
+		"param":"schema"
+		}
 	]
 }

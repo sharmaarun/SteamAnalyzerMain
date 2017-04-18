@@ -28,15 +28,25 @@ import com.sa.core.StreamBase;
 import com.sa.core.commons.dto.RDDDTO;
 import java.beans.Transient;
 import java.io.Serializable;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import javafx.util.Duration;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Seconds;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -47,107 +57,124 @@ import twitter4j.Status;
 
 /**
  * One of the base components used to provide social tweets stream.
+ *
  * @author arunsharma
  */
 public class ReportGenerator extends StreamBase implements IConnector {
 
-    private Map<String, String> creds;
-    JavaDStream<Status> stream;
-    private JavaRDD<String> inputBuffer; //TODO: make it more flexible
-    private StreamAnalyzer sa;
+    private Map<String, String> fields;
+    private JavaDStream<String> input; //TODO: make it more flexible
+
     public ReportGenerator(JavaSparkContext _sc, StreamAnalyzer sa) {
         super(_sc, sa);
         sc = _sc;
         this.sa = sa;
-        tsc = new JavaStreamingContext(sc, Seconds.apply(1));
-        
-        //initialize the input buffer. It serves as the temporary memory storage of incoming tweets.
-        //TODO: make this persist into a file in hdfs
-        inputBuffer = sc.emptyRDD();
-        
-        
     }
-    
+
     /**
-     * This method helps the plugin/component to operate on meta-data and do initialization before class instantiation.
-     * 
-     * This method should return a string the represents the initialization code. For this plugin, we need to initialize the
-     * credential info. Hence we create a code-string that doesn't depend on variables but hard coded string values instead.
-     * @param metadata 
+     * This method helps the plugin/component to operate on meta-data and do
+     * initialization before class instantiation.
+     *
+     * This method should return a string the represents the initialization
+     * code. For this plugin, we need to initialize the credential info. Hence
+     * we create a code-string that doesn't depend on variables but hard coded
+     * string values instead.
+     *
+     * @param metadata
      */
-    public void preload(HashMap<String,Object> metadata) {
+    public void preload(HashMap<String, Object> metadata) {
+        fields = new HashMap<>();
         try {
-        String ck = (String)metadata.get("consumer_key");
-        String cs = (String) metadata.get("consumer_secret");
-        String at = (String) metadata.get("access_token");
-        String ats = (String) metadata.get("access_token_secret");
-        //set twitter auth creds
-        System.out.println("-------------------Key :" +  ck);
-        System.setProperty("twitter4j.oauth.consumerKey",ck);
-        System.setProperty("twitter4j.oauth.consumerSecret",cs);
-        System.setProperty("twitter4j.oauth.accessToken", at);
-        System.setProperty("twitter4j.oauth.accessTokenSecret", ats);
-        
-        //create a twitter stream using spark streaing context
-        stream = TwitterUtils.createStream(tsc);
-        } catch(Exception ex ){
+            String x_label = (String) metadata.get("x_label");
+            fields.put("x_label", x_label);
+            String y_label = (String) metadata.get("y_label");
+            fields.put("y_label", y_label);
+            String stream_label = (String) metadata.get("stream_label");
+            fields.put("stream_label", stream_label);
+            
+        } catch (Exception ex) {
             System.out.println("Could not initialize plugin : ");
             ex.printStackTrace();
         }
     }
-    
+
+    @Override
+    public void setInputStreamPath(String path) {
+        this.inputStreamPath = path;
+    }
+
     /**
      * TODO: Remove it
      */
     @Override
     public void fetch() {
-        
+
     }
-   
+
     /**
-     * used by other stages to poll data from the temporary memory. i.e. the bunch of tweets received in last iteration.
-     * @return 
+     * used by other stages to poll data from the temporary memory. i.e. the
+     * bunch of tweets received in last iteration.
+     *
+     * @return
      */
     @Override
-    public RDDDTO poll() {
-        
+    public JavaDStream poll() {
+
         return null;
     }
-    
+
     @Override
     public String getCheckpointPath() {
-        if(sa.getProperties().get("hdfsMaster")!=null) {
-            return sa.getProperties().get("hdfsMaster")+"/"+sa.getProperties().get("checkpointPath");
+        if (sa.getProperties().get("hdfsMaster") != null) {
+//            return sa.getProperties().get("hdfsMaster") + "/" + System.getProperty("reports.path") + "/" + getId() + "/";
+            return sa.getProperties().get("hdfsMaster") + "/null/ReportGenerator" + getId() + "/";
         }
         return null;
     }
-    
+
     /**
      * starts the stream of tweets
      */
     @Override
     public void start() {
+//        while (true) {
+
         try {
-            TweetFetcher.fetch(this,stream,inputBuffer); //workaround to escape from serialization of the whole class.
-            tsc.start();
-            tsc.awaitTermination();
+            
+                System.out.println("=================================================================");
+                System.out.println("Settin up Report");
+                Configuration conf = new Configuration();
+                FileSystem fs = FileSystem.get(new URI(sa.getProperties().get("hdfsMaster")), conf);
+                ReportProcessor.process(fields, fs, input, inputStreamPath);
+
+            
         } catch (Exception ex) {
-            System.out.println(ex);
+            ex.printStackTrace(System.out);
         }
-    }
+//            try{
+//                Thread.sleep(1000);
+//            } catch (Exception ex ){
+//                ex.printStackTrace(System.out);
+//            }
 
-    public Map<String, String> getCreds() {
-        return creds;
-    }
-
-    public void setCreds(Map<String, String> creds) {
-        this.creds = creds;
     }
 
     public StreamAnalyzer getSa() {
         return sa;
     }
-    
+
+    public Map<String, String> getFields() {
+        return fields;
+    }
+
+    public JavaDStream<String> getInput() {
+        return input;
+    }
+
+    public void setInput(JavaDStream<String> input) {
+        this.input = input;
+    }
+
     
 
 }
