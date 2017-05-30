@@ -74,6 +74,7 @@ module.exports = function(app, passport) {
     require('./server/plugins/routes.js')(passport);
     require('./server/projects/routes.js')(passport);
     require('./server/reports/routes.js')(passport);
+    require('./server/dash/routes.js')(passport);
     
     app.get('*', function(req, res) {
         res.render('index.ejs',{requestedURL:req.originalUrl});

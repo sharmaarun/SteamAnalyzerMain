@@ -41,6 +41,14 @@ var HomeComponent = (function () {
         this.resourceChart = {};
         this.reports = [];
         this.filterReports = "";
+        this.stats = {
+            spark: {
+                status: false
+            },
+            hadoop: {
+                status: false
+            }
+        };
         this.loadedCharts = false;
         this.chartsRef = {};
         this.doughnutChartLabels = ['RAM (%/100)', 'DISK I/O (%/100)', 'CPU (%/100)'];
@@ -92,6 +100,8 @@ var HomeComponent = (function () {
         console.log(document.cookie);
         if (this.loggedIn)
             this.init();
+        //load status
+        this.getStatus();
     }
     HomeComponent.prototype.updateFunction = function () {
         var _this_ = this;
@@ -111,19 +121,21 @@ var HomeComponent = (function () {
     };
     HomeComponent.prototype.init = function () {
         var _this_ = this;
-        this.initCharts();
+        //        this.initCharts();
         this.initReports();
-        setTimeout(function () {
-            _this_.charts.forEach(function (cc) {
-                _this_.chartsRef[cc.element.nativeElement.id] = cc;
-            });
-            _this_.loadedCharts = true;
-            console.log(_this_.chartsRef);
-        }, 500);
-        setInterval(function () {
-            if (_this_.loadedCharts)
-                _this_.updateFunction();
-        }, 2000);
+        //        setTimeout(function() {
+        //            _this_.charts.forEach(function(cc) {
+        //                _this_.chartsRef[cc.element.nativeElement.id] = cc;
+        //            });
+        //            _this_.loadedCharts = true;
+        //            console.log(_this_.chartsRef);
+        //
+        //        }, 500);
+        //        setInterval(function() {
+        //            if (_this_.loadedCharts)
+        //                _this_.updateFunction();
+        //
+        //        }, 2000);
     };
     HomeComponent.prototype.initCharts = function () {
         this.resourceChart.type = "doughnut";
@@ -176,6 +188,31 @@ var HomeComponent = (function () {
         document.cookie = "loggedin=true";
         window.location.reload();
         return false;
+    };
+    HomeComponent.prototype.mapStats = function (data) {
+        var _this_ = this;
+        //check hadoop and spark status
+        if (data != undefined) {
+            _this_.stats.spark.status = data.services.spark.status;
+            _this_.stats.hadoop.status = data.services.hadoop.status;
+            console.log(data);
+        }
+    };
+    HomeComponent.prototype.getStatus = function () {
+        var _this_ = this;
+        commons_component_1.Commons.loaderShow();
+        var action;
+        this.http.get('/api/dash/services/status', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            commons_component_1.Commons.loaderDone("");
+            action = commons_component_1.Commons.toast({ content: "Loaded Status.", timeout: 1000 });
+            _this_.mapStats(d.payload);
+        }, function (e) {
+            commons_component_1.Commons.loaderDone("");
+            console.log("");
+        }, function (s) {
+            commons_component_1.Commons.loaderDone("");
+            console.log("Fetched Projects!");
+        });
     };
     __decorate([
         core_1.ViewChildren(ng2_charts_1.BaseChartDirective), 

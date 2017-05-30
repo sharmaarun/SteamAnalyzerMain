@@ -38,7 +38,8 @@ limitations under the License.
   -webkit-font-smoothing: antialiased; }
 
 body {
-  font-family: sans-serif; }
+  font-family: sans-serif;
+  /*bootstrap fixes*/ }
   body .loader {
     position: absolute;
     top: 0px;
@@ -61,7 +62,8 @@ body {
     bottom: 10px;
     left: 20%;
     right: 10px;
-    top: 120px; }
+    top: 120px;
+    height: auto !important; }
   body #componentsBox {
     position: absolute;
     bottom: 10px;
@@ -92,6 +94,8 @@ body {
   body .snackbar.snackbar-opened {
     height: auto;
     opacity: 1; }
+  body .panel.panel-info > .panel-heading {
+    background-image: none; }
   @media (max-width: 767px) {
     body #snackbar-container {
       left: 0 !important;

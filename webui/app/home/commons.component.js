@@ -81,6 +81,8 @@ var FilterProjectsPipe = (function () {
     FilterProjectsPipe.prototype.transform = function (items, args) {
         if (!items)
             return [];
+        if (args == "" || args == undefined || args == null)
+            return items;
         return items.filter(function (it) { if (args == "" || args == undefined || args == null) {
             return true;
         }

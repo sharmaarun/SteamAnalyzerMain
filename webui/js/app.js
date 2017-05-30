@@ -244,6 +244,8 @@ var FilterProjectsPipe = (function () {
     FilterProjectsPipe.prototype.transform = function (items, args) {
         if (!items)
             return [];
+        if (args == "" || args == undefined || args == null)
+            return items;
         return items.filter(function (it) { if (args == "" || args == undefined || args == null) {
             return true;
         }
@@ -354,6 +356,14 @@ var HomeComponent = (function () {
         this.resourceChart = {};
         this.reports = [];
         this.filterReports = "";
+        this.stats = {
+            spark: {
+                status: false
+            },
+            hadoop: {
+                status: false
+            }
+        };
         this.loadedCharts = false;
         this.chartsRef = {};
         this.doughnutChartLabels = ['RAM (%/100)', 'DISK I/O (%/100)', 'CPU (%/100)'];
@@ -405,6 +415,8 @@ var HomeComponent = (function () {
         console.log(document.cookie);
         if (this.loggedIn)
             this.init();
+        //load status
+        this.getStatus();
     }
     HomeComponent.prototype.updateFunction = function () {
         var _this_ = this;
@@ -424,19 +436,21 @@ var HomeComponent = (function () {
     };
     HomeComponent.prototype.init = function () {
         var _this_ = this;
-        this.initCharts();
+        //        this.initCharts();
         this.initReports();
-        setTimeout(function () {
-            _this_.charts.forEach(function (cc) {
-                _this_.chartsRef[cc.element.nativeElement.id] = cc;
-            });
-            _this_.loadedCharts = true;
-            console.log(_this_.chartsRef);
-        }, 500);
-        setInterval(function () {
-            if (_this_.loadedCharts)
-                _this_.updateFunction();
-        }, 2000);
+        //        setTimeout(function() {
+        //            _this_.charts.forEach(function(cc) {
+        //                _this_.chartsRef[cc.element.nativeElement.id] = cc;
+        //            });
+        //            _this_.loadedCharts = true;
+        //            console.log(_this_.chartsRef);
+        //
+        //        }, 500);
+        //        setInterval(function() {
+        //            if (_this_.loadedCharts)
+        //                _this_.updateFunction();
+        //
+        //        }, 2000);
     };
     HomeComponent.prototype.initCharts = function () {
         this.resourceChart.type = "doughnut";
@@ -489,6 +503,31 @@ var HomeComponent = (function () {
         document.cookie = "loggedin=true";
         window.location.reload();
         return false;
+    };
+    HomeComponent.prototype.mapStats = function (data) {
+        var _this_ = this;
+        //check hadoop and spark status
+        if (data != undefined) {
+            _this_.stats.spark.status = data.services.spark.status;
+            _this_.stats.hadoop.status = data.services.hadoop.status;
+            console.log(data);
+        }
+    };
+    HomeComponent.prototype.getStatus = function () {
+        var _this_ = this;
+        commons_component_1.Commons.loaderShow();
+        var action;
+        this.http.get('/api/dash/services/status', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            commons_component_1.Commons.loaderDone("");
+            action = commons_component_1.Commons.toast({ content: "Loaded Status.", timeout: 1000 });
+            _this_.mapStats(d.payload);
+        }, function (e) {
+            commons_component_1.Commons.loaderDone("");
+            console.log("");
+        }, function (s) {
+            commons_component_1.Commons.loaderDone("");
+            console.log("Fetched Projects!");
+        });
     };
     __decorate([
         core_1.ViewChildren(ng2_charts_1.BaseChartDirective), 
@@ -838,71 +877,58 @@ var CreateProjectPage = (function () {
         console.log(this.stage);
     };
     CreateProjectPage.prototype.saSetup = function () {
-        //once all tool images loaded, start setup
-        //        this.saTools.push({ _id: 0 });
-        //        this.saTools[0].saImage = this.saToolSprites[0];
-        //        this.saTools[0].name = 'Panel';
-        //        this.saTools[0].resizable = true;
-        //        this.saTools[0].size = { w: 200, h: 250 };
-        //        this.saTools[0].size = { w: 200, h: 250 };
-        //        this.saTools[0].properties = [
-        //            { name: 'Type', type: 'text', defaultValue: 'KEYWORD_SEARCH', object: name, nv: '' },
-        //            { name: 'Keyword', type: 'text', defaultValue: '', object: name, nv: '' },
-        //        ];
-        //
-        //        this.saTools.push({ _id: 1 });
-        //        this.saTools[1].saImage = this.saToolsImages[1];
-        //        this.saTools[1].name = 'StreamPoint';
-        //        this.saTools[1].resizable = false;
-        //        this.saTools[1].size = { w: 100, h: 100 };
-        //
-        //        this.saTools.push({ _id: 2 });
-        //        this.saTools[2].saImage = this.saToolsImages[2];
-        //        this.saTools[2].name = 'DataBase';
-        //        this.saTools[2].resizable = false;
-        //        this.saTools[2].size = { w: 100, h: 100 };
-        //create plugins
-        if (this.plugins.length) {
-            for (var i = 0; i < this.plugins.length; i++) {
-                var plug = this.plugins[i];
-                this.saTools.push({ _id: i });
-                this.saTools[i].plugin = plug;
-                this.saTools[i].saImage = this.saToolSprites[0];
-                this.saTools[i].name = plug.name;
-                this.saTools[i].resizable = true;
-                this.saTools[i].size = { w: 150, h: 150 };
-                //                this.saTools[i].size = { w: 200, h: 250 };
-                this.saTools[i].properties = [];
-                for (var j = 0; j < plug.clientParams.length; j++) {
-                    this.saTools[i].properties.push({
-                        name: plug.clientParams[j].name,
-                        type: plug.clientParams[j].type,
-                        param: plug.clientParams[j].param,
-                        object: name, nv: ''
-                    });
-                }
-            }
-        }
+        //        //create plugins
+        //        if (this.plugins.length) {
+        //            for (var i = 0; i < this.plugins.length; i++) {
+        //                var plug = this.plugins[i];
+        //                this.saTools.push({ _id: i });
+        //                this.saTools[i].plugin = plug;
+        //                this.saTools[i].saImage = this.saToolSprites[0];
+        //                this.saTools[i].name = plug.name;
+        //                this.saTools[i].resizable = true;
+        //                this.saTools[i].size = { w: 150, h: 150 };
+        //               
+        //                this.saTools[i].properties = [];
+        //                for (var j = 0; j < plug.clientParams.length; j++) {
+        //                    this.saTools[i].properties.push({
+        //                        name: plug.clientParams[j].name,
+        //                        type: plug.clientParams[j].type,
+        //                        param: plug.clientParams[j].param,
+        //                        object: name, nv: ''
+        //                    });
+        //                }
+        //                //                this.saTools[0].properties = [
+        //                //                    { name: 'Type', type: 'text', defaultValue: 'KEYWORD_SEARCH', object: name, nv: '' },
+        //                //                    { name: 'Keyword', type: 'text', defaultValue: '', object: name, nv: '' },
+        //                //                ];
+        //            }
+        //        }
         var w = $("#drawBox").width();
         var h = $("#drawBox").height();
-        this.renderer = this.saPixi.autoDetectRenderer(w, h, { antialias: true, transparent: false, resolution: 1 });
-        document.getElementById("drawBox").appendChild(this.renderer.view);
-        $("#drawBox").bind('mousewheel', this.stageZoom);
-        // this.saPixi.DOM.Setup(this.renderer,true);
-        this.stage = new this.saPixi.Container();
-        this.connections = new this.saPixi.Graphics();
-        this.connections.points = [];
-        // this.connections.points.push({x1:0,y1:0,x2:100,y2:100});
-        // this.connections.points.push({x:100,y:100});
-        // this.connections.push(gfx);
-        this.stage.addChild(this.connections);
-        this.stage.mouseup = this.stageMouseUp;
-        this.stage.mousemove = this.stageMouseMove;
-        var _this_ = this;
-        if (this.projectName !== undefined && this.projectName !== null) {
-            this.reload();
-        }
-        this.saRender();
+        //        this.renderer = this.saPixi.autoDetectRenderer(w, h, { antialias: true, transparent: false, resolution: 1 });
+        //        document.getElementById("drawBox").appendChild(this.renderer.view);
+        //        $("#drawBox").bind('mousewheel', this.stageZoom);
+        //        // this.saPixi.DOM.Setup(this.renderer,true);
+        //        this.stage = new this.saPixi.Container();
+        //
+        //
+        //        this.connections = new this.saPixi.Graphics();
+        //        this.connections.points = [];
+        //        // this.connections.points.push({x1:0,y1:0,x2:100,y2:100});
+        //        // this.connections.points.push({x:100,y:100});
+        //        // this.connections.push(gfx);
+        //
+        //        this.stage.addChild(this.connections);
+        //        this.stage.mouseup = this.stageMouseUp;
+        //        this.stage.mousemove = this.stageMouseMove;
+        //
+        //        var _this_ = this;
+        //        if (this.projectName !== undefined && this.projectName !== null) {
+        //            this.reload();
+        //        }
+        //        this.saRender();
+        // adding new canvas node editor - linker js
+        $("#drawBox").linker();
     };
     CreateProjectPage.prototype.stageZoom = function (e, d) {
         console.log(e);

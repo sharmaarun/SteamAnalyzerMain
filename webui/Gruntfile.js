@@ -40,7 +40,8 @@ module.exports = function (grunt) {
                         "js/pixi.min.js",
                         "js/snackbar.min.js",
                         "js/ace-builds/src-min-noconflict",
-                        "node_modules/chart.js/dist/Chart.js"
+                        "node_modules/chart.js/dist/Chart.js",
+                        "js/linker/dist/linker.min.js"
                         // "js/pixi.dom.js"
                     ],
                     'js/app.js': ['app/**/*.js'],
@@ -54,7 +55,8 @@ module.exports = function (grunt) {
                 src: ["node_modules/bootstrap/dist/css/bootstrap.min.css",
                     "node_modules/bootstrap/dist/css/bootstrap-theme.min.css",
                     "node_modules/bootstrap-material-design/dist/css/bootstrap-material-design.min.css",
-                    "node_modules/bootstrap-material-design/dist/css/ripples.min.css"],
+                    "node_modules/bootstrap-material-design/dist/css/ripples.min.css",
+                    "js/linker/dist/linker.min.css"],
                 dest: "lib.css"
             }
         }

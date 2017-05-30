@@ -79,7 +79,8 @@ export class Commons {
 @Injectable()
 export class FilterProjectsPipe implements PipeTransform {
     transform(items:any[], args?):any[] { 
-        if (!items) return [];        
+        if (!items) return [];  
+        if (args=="" || args==undefined || args==null) return items;      
         return items.filter(it => {if(args=="" || args==undefined || args==null){ return true; } else {return it.displayName==undefined?false:it.displayName.indexOf(args)!==-1}});
     }
 }

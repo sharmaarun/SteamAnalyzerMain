@@ -40,6 +40,16 @@ export class HomeComponent {
     resourceChart = {};
     reports = [];
     filterReports=  "";
+    stats={
+        spark:{
+            status:false;
+        },
+        hadoop:{
+            status:false;
+        }
+    };
+    
+    
     loadedCharts = false;
     chartsRef = {};
     public doughnutChartLabels: string[] = ['RAM (%/100)', 'DISK I/O (%/100)', 'CPU (%/100)'];
@@ -96,6 +106,9 @@ export class HomeComponent {
         }
         console.log(document.cookie);
         if (this.loggedIn) this.init();
+        
+        //load status
+        this.getStatus();
 
     }
 
@@ -120,21 +133,21 @@ export class HomeComponent {
 
     public init() {
         var _this_ = this;
-        this.initCharts();
+//        this.initCharts();
         this.initReports();
-        setTimeout(function() {
-            _this_.charts.forEach(function(cc) {
-                _this_.chartsRef[cc.element.nativeElement.id] = cc;
-            });
-            _this_.loadedCharts = true;
-            console.log(_this_.chartsRef);
-
-        }, 500);
-        setInterval(function() {
-            if (_this_.loadedCharts)
-                _this_.updateFunction();
-
-        }, 2000);
+//        setTimeout(function() {
+//            _this_.charts.forEach(function(cc) {
+//                _this_.chartsRef[cc.element.nativeElement.id] = cc;
+//            });
+//            _this_.loadedCharts = true;
+//            console.log(_this_.chartsRef);
+//
+//        }, 500);
+//        setInterval(function() {
+//            if (_this_.loadedCharts)
+//                _this_.updateFunction();
+//
+//        }, 2000);
 
 
     }
@@ -193,5 +206,37 @@ export class HomeComponent {
         document.cookie = "loggedin=true";
         window.location.reload();
         return false;
+    }
+    
+    
+    public mapStats(data) {
+        var _this_ = this;
+        
+        //check hadoop and spark status
+        if(data!=undefined) {
+            _this_.stats.spark.status = data.services.spark.status;
+            _this_.stats.hadoop.status = data.services.hadoop.status;
+            console.log(data);
+        }
+    }
+    
+    
+    public getStatus() {
+        var _this_ = this;
+        Commons.loaderShow();
+        var action;
+        this.http.get('/api/dash/services/status', this.headers).map(res => res.json()).subscribe(
+            d => {
+                Commons.loaderDone("");
+                action =Commons.toast({ content: "Loaded Status.", timeout:1000});
+                _this_.mapStats(d.payload);
+            }, e => {
+                Commons.loaderDone("");
+                console.log("");
+            }, s => {
+                Commons.loaderDone("");
+                console.log("Fetched Projects!");
+            }
+        );
     }
 }

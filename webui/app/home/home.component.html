@@ -50,28 +50,60 @@ limitations under the License.
     </div>
 
     <div *ngIf="loggedIn" class="row">
-        <div class="col-lg-12">
+        <div class="col-lg-8">
             <h1>Dashboard</h1>
         </div>   
+        <div class="col-lg-4 text-right">
+            <button (click)="getStatus()" class="btn btn-sm btn-default">
+                <i class="material-icons">refresh</i>
+            </button>
+        </div>
         <div class="col-lg-12">
             <div class="row">
                 <div class="col-lg-9 col-md-9 col-sm-12 col-xs-12">
-                    <div class="form-group">
+<!--                    <div class="form-group">
                         <input class="form-control" type="text" [(ngModel)]="filterReports" placeholder="Search For Project Report.."/>
-                    </div>
+                    </div>-->
 
                     <div class="container-fluid">
-                        <div class="row">
-                            <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12" *ngFor="let r of reports | filterProjects :  filterReports ">
-                                 <div class="panel">
-                                    <div class="panel-heading">{{r.displayName}}</div>
+                        
+                        <div class="row">    
+                            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                                <div class="panel panel-info">
+                                    <div class="panel-heading">
+                                        Projects/Jobs
+                                        <input class="form-control form-control-sm" type="text" [(ngModel)]="filterReports" placeholder="Search For Project Report.."/>
+                                    </div>
                                     <div class="panel-body">
-                                        Report for project : {{r.displayName}}<br/>
-                                        Status : Currently Active <br/>
-                                        <button class="right btn btn-sm btn-raised tn-warning" [routerLink] = "['/report',r.name]">View</button>
+                                        <table class="table table-striped table-hover ">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Project Name</th>
+                                                    <th>Job/Driver ID</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr *ngFor="let r of reports | filterProjects :  filterReports; let i=index ">
+                                                    <td>{{i}}</td>
+                                                    <td>{{r.displayName}}</td>
+                                                    <td>____</td>
+                                                    <td>
+                                                        <span class="label label-success">Running</span>
+                                                    </td>
+                                                    <td>
+                                                        <button title="Run Project" class="btn btn-sm btn-orange" ><i class="material-icons">play_arrow</i></button>
+                                                        <button title="View Report" class="btn btn-sm btn-orange" ><i class="material-icons">assignment</i></button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
@@ -99,13 +131,29 @@ limitations under the License.
                     <div class="row">
                         <div class="col-lg-12">
                             <div class="panel panel-default">
-                                <div class="panel-heading">Resources Usage</div>
-                                <div class="panel-body center-text">
-                                    <canvas id="resourcesChart"  baseChart class="chart"
-                                            [data]="doughnutChartData"
-                                            [labels]="doughnutChartLabels"
-                                            [chartType]="doughnutChartType"
-                                            ></canvas>
+                                <div class="panel-heading">Servers/Engines Status</div>
+                                <div class="panel-body">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Server</th>
+                                                <th>Status</th>
+<!--                                                <th>Action</th>-->
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Apache Spark</td>
+                                                <td><span *ngIf="stats.spark.status" class="label label-success">Running</span><span *ngIf="!stats.spark.status" class="label label-danger">Stopped</span></td>
+                                                <!--<td><i class="material-icons">refresh</i></td>-->
+                                            </tr>
+                                            <tr>
+                                                <td>Apache Hadoop</td>
+                                                <td><span *ngIf="stats.hadoop.status" class="label label-success">Running</span><span *ngIf="!stats.hadoop.status" class="label label-danger">Stopped</span></td>
+                                                <!--<td><i class="material-icons">refresh</i></td>-->
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -113,16 +161,24 @@ limitations under the License.
                     <div class="row">
                         <div class="col-lg-12">
                             <div class="panel panel-default">
-                                <div class="panel-heading">Usage Per Project</div>
+                                <div class="panel-heading">Cluster Status</div>
                                 <div class="panel-body center-text">
-                                    <canvas id="lineChart" baseChart class="chart"
-                                            [datasets]="lineChartData"
-                                            [labels]="lineChartLabels"
-                                            [options]="lineChartOptions"
-                                            [colors]="lineChartColors"
-                                            [legend]="lineChartLegend"
-                                            [chartType]="lineChartType"
-                                            ></canvas>
+                                    <table class="table table-hover table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Worker</th>
+                                                <th>Executors</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>10.0.0.6</td>
+                                                <td>4</td>
+                                                <td><span class="label label-success">Running</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>

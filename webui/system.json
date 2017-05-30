@@ -1,10 +1,17 @@
 {
+    "path":{
+        "localPath":"/home/arunsharma/MS/research/THS/projects/test-twitter"
+    },
     "projects":{
         "useHDFS": false,
         "localPath":"/home/arunsharma/MS/research/THS/projects/test-twitter/projects"
     },
     "hadoop" : {
-        "path": "/home/hadoop/hadoop"
+        "path": "/home/hadoop/hadoop",
+        "cmd": {
+			"start":"/sbin/start-dfs.sh &&",
+			"stop":"/sbin/stop-master.sh"
+			 }
     },
     "template": {
         "path": "/home/arunsharma/MS/research/THS/projects/test-twitter",
@@ -27,5 +34,12 @@
     "compiler" : {
         "path" : "/home/arunsharma/MS/research/THS/projects/test-twitter/compiler/target",
         "executable" : "compiler-1.0-SNAPSHOT-jar-with-dependencies.jar"
-    }
+    },
+    "spark" : {
+		"path":"/home/hadoop/spark-2.0.0-bin-hadoop2.7",
+		"cmd": {
+			"start":"/sbin/start-master.sh",
+			"stop":"/sbin/stop-master.sh"
+			 }
+	}
 }

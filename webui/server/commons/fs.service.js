@@ -103,11 +103,39 @@ exports.list = function (path, cb) {
     });
 }
 
+
 exports.run_cmd = function(cmd, args) {
     try {
   var spawn = require('child_process').spawnSync,
   child = spawn(cmd, args);
   return child;
+    }catch (e) {
+        console.log(e);
+    }
+    return {};
+}
+
+exports.runCmd = function(cmd, args, cb) {
+    try {
+  var spawn = require('child_process').spawn,
+  child = spawn(cmd, args);
+  var out = "";
+    var err = "";
+    child.stdout.on("data",function(data){
+        out += data.toString();
+        
+    });
+    
+    child.stderr.on("data",function(data){
+        err += data.toString();
+        
+    });
+    //return res.status(200).send({status:"OK",msg:"Success!",payload:data});
+    //return res.status(200).send({status:"ERROR",msg:"Unable to execute command!",payload:data});
+    child.on("close",function(){
+       console.log("Command executed : " + cmd);
+       cb(out,err);
+    });
     }catch (e) {
         console.log(e);
     }
