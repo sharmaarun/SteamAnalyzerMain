@@ -7,6 +7,12 @@
 	"package":"com.sa.plugins",
         "jar":"target/SATwitterStream-1.0-SNAPSHOT.jar",
 	"description" : "A plugin that fetches tweets using Tweet4j as the base library. The parameters tell the library about authentication keys",
+	"outputs":[
+		{
+			"id":"out1",
+			"name":"Tweets"
+		}
+	],
 	"clientParams":[
 	{
 		"type":"text",

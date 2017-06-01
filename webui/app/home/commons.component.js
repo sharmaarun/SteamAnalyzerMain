@@ -27,6 +27,15 @@ var core_1 = require('@angular/core');
 var Commons = (function () {
     function Commons() {
     }
+    Commons.getUUID = function () {
+        var d = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
+    };
     Commons.loaderShow = function () {
         console.log("in loaershow");
         var loader = document.getElementById("loaderComponent");
@@ -66,6 +75,27 @@ var Commons = (function () {
             o = options;
         }
         $.snackbar(o);
+    };
+    Commons.prototype.containsProperty = function (obj, prop) {
+        var props = Object.keys(obj);
+        for (var _i = 0, props_1 = props; _i < props_1.length; _i++) {
+            var p = props_1[_i];
+            if (p == prop) {
+                return true;
+            }
+        }
+    };
+    Commons.extend = function (o1, o2) {
+        var out = o1;
+        var k2 = Object.keys(o2);
+        for (var _i = 0, k2_1 = k2; _i < k2_1.length; _i++) {
+            var kj = k2_1[_i];
+            out[kj] = o2[kj];
+        }
+        return out;
+    };
+    Commons.clone = function (obj) {
+        return $.extend(true, {}, obj);
     };
     Commons.loaderTimer = -1;
     Commons = __decorate([
@@ -149,4 +179,12 @@ var FilterPropsPipe = (function () {
     return FilterPropsPipe;
 }());
 exports.FilterPropsPipe = FilterPropsPipe;
+(function (STAGE_TYPES) {
+    STAGE_TYPES[STAGE_TYPES["UNDEFINED_STAGE"] = 0] = "UNDEFINED_STAGE";
+    STAGE_TYPES[STAGE_TYPES["STREAM_STAGE"] = 1] = "STREAM_STAGE";
+    STAGE_TYPES[STAGE_TYPES["PROCESS_STAGE"] = 2] = "PROCESS_STAGE";
+    STAGE_TYPES[STAGE_TYPES["DATABASE_STAGE"] = 3] = "DATABASE_STAGE";
+    STAGE_TYPES[STAGE_TYPES["REPORT_STAGE"] = 4] = "REPORT_STAGE";
+})(exports.STAGE_TYPES || (exports.STAGE_TYPES = {}));
+var STAGE_TYPES = exports.STAGE_TYPES;
 //# sourceMappingURL=commons.component.js.map

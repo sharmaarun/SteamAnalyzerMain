@@ -10,25 +10,25 @@
                     <li><a href="javascript:void(0)" (click)="save()">
                             Save
                         </a>
-                        
+
                     </li>
                     <li><a href="javascript:void(0)" (click)="compile()">
                             Compile
                         </a>
-                        
+
                     </li>
                     <li><a href="javascript:void(0)" (click)="run()">
                             Run
                         </a>
-                        
+
                     </li>
-<!--                    <li class="dropdown">
-                        <a href="javascrit:void(0)"  class="dropdown-toggle" data-toggle="dropdown">Components
-                            <b class="caret"></b></a>
-                        <ul class="dropdown-menu">
-                            
-                        </ul>
-                    </li>-->
+                    <!--                    <li class="dropdown">
+                                            <a href="javascrit:void(0)"  class="dropdown-toggle" data-toggle="dropdown">Components
+                                                <b class="caret"></b></a>
+                                            <ul class="dropdown-menu">
+                                                
+                                            </ul>
+                                        </li>-->
                 </ul>
 
             </div>
@@ -43,9 +43,11 @@
                 </div>
                 <div class="panel-body">
                     <div class="list-group">
-                        <div *ngFor="let tool of saTools" (click)="addObject(tool)" class="list-group-item list-group-item-warning">
-                            <a href="javascript:void(0)">{{tool.name}}</a>
-                        </div>
+                        <template ngFor let-p [ngForOf]="plugins">
+                                  <div  *ngIf="p.type=='STREAM_STAGE'" (click)="addObject(p)" class="list-group-item list-group-item-warning">
+                                <a href="javascript:void(0)">{{p.name}}</a>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -55,7 +57,11 @@
                 </div>
                 <div class="panel-body">
                     <div class="list-group">
-                        
+                        <template ngFor let-p [ngForOf]="plugins">
+                                  <div  *ngIf="p.type=='PROCESS_STAGE'" (click)="addObject(p)" class="list-group-item list-group-item-warning">
+                                <a href="javascript:void(0)">{{p.name}}</a>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -65,7 +71,11 @@
                 </div>
                 <div class="panel-body">
                     <div class="list-group">
-                        
+                        <template ngFor let-p [ngForOf]="plugins">
+                                  <div  *ngIf="p.type=='DATABASE_STAGE'" (click)="addObject(p)" class="list-group-item list-group-item-warning">
+                                <a href="javascript:void(0)">{{p.name}}</a>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -75,13 +85,28 @@
                 </div>
                 <div class="panel-body">
                     <div class="list-group">
-                        
+                        <template ngFor let-p [ngForOf]="plugins">
+                                  <div  *ngIf="p.type=='REPORT_STAGE'" (click)="addObject(p)" class="list-group-item list-group-item-warning">
+                                <a href="javascript:void(0)">{{p.name}}</a>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
-            
-        </div>
 
+        </div>
+        <!-- floting control buttons -->
+        <div class="floating-toolbox">
+            <button (click)="resetZoom()" *ngIf="previousZoom!=1" class="btn btn-sm btn-default">
+                <i class="material-icons">refresh</i>
+            </button>
+            <button (click)="zoom(10)" class="btn btn-sm btn-default">
+                <i class="material-icons">zoom_in</i>
+            </button>
+            <button (click)="zoom(-10)"class="btn btn-sm btn-default">
+                <i class="material-icons">zoom_out</i>
+            </button>
+        </div>
         <div  id="drawBox"></div>
 
 
@@ -93,7 +118,7 @@
                         <h4 class="modal-title" id="myModalLabel">Edit Properties</h4>
                     </div>
                     <div class="modal-body">
-                        <div *ngFor="let inp of saSelectedObject.properties">
+                        <div *ngFor="let inp of selectedNode==undefined?[]:selectedNode.plugin.clientParams">
                             <label class="label">{{inp.name}}</label>
                             <input class="form-control" type="{{inp.type}}" [(ngModel)]="inp.nv">
                         </div>

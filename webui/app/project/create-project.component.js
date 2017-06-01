@@ -35,27 +35,19 @@ var CreateProjectPage = (function () {
         this.preloadProject = false;
         this.title = "Create Project";
         this._zoomLevel = 1;
-        // tools
-        this.saToolsImages = [
-            "app/images/panel.png",
-            "app/images/stream_point.png",
-            "app/images/db.png"
-        ];
-        this.saControlsImages = [
-            "app/images/cross.png",
-            "app/images/edit.png",
-            "app/images/hole.png"
-        ];
-        this.saToolSprites = [
-            "app/images/panel.json"
-        ];
-        this.cross = {};
-        this.saTools = [];
-        this.saAllObjects = [];
-        this.saSelectedObject = {};
-        this.plugins = [];
+        this.previousZoom = 1;
         //objects
-        this.topology = { name: 'Untitiled' + new Date().getMilliseconds(), displayName: "", stages: [], connections: [] };
+        this.plugins = [];
+        this.topology = { name: 'project-' + commons_component_1.Commons.getUUID(), displayName: "", stages: [], connections: [] };
+        this.topologyCanvas = [];
+        this.relevantNodeProps = [
+            "id",
+            "name",
+            "plugin",
+            "type",
+            "x",
+            "y"
+        ];
         this.idCounter = 0;
         this.conIdCounter = 0;
         this.connections = [];
@@ -65,30 +57,16 @@ var CreateProjectPage = (function () {
         this.connectMode = false;
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this._this_ = this;
-        this.saPixi = PIXI;
-        this.bgColor = 0xFFFFFF;
-        //load all the tools
-        //        for (var i = 0; i < this.saToolsImages.length;         i++) {
-        //            var obj = new this.saPixi.Sprite(this.saPixi.Texture.fromImage(this.saToolsImages[i].        image))
-        //            this.saTools.push({'name':this.saToolsImages[i].name, tool:         obj});
-        //        }
+        var _this_ = this;
+        this.http = this._http;
+        //start
+        //1. load plugins
+        this.loadPlugins();
         //setup topology
-        if (CreateProjectPage.__LOAD_ONCE_EDITOR) {
-            this.saPixi.loader
-                .add(this.saToolsImages)
-                .add(this.saControlsImages)
-                .add(this.saToolSprites)
-                .load(this.saInit);
-        }
         setTimeout(function () {
             _this_.saSetup();
             CreateProjectPage.__LOAD_ONCE_EDITOR = false;
         }, 1000);
-        var _this_ = this;
-        this.http = this._http;
-        //load plugins
-        this._http.get('api/plugins', this.headers).map(function (response) { return response.json(); })
-            .subscribe(function (p) { _this_.plugins = p; }, function (e) { console.log(e); }, function (s) { console.log(s); });
     }
     CreateProjectPage.prototype.ngOnInit = function () {
         var _this = this;
@@ -98,556 +76,311 @@ var CreateProjectPage = (function () {
             // In a real app: dispatch action to load the details here.
         });
     };
+    //load plugins
+    CreateProjectPage.prototype.loadPlugins = function () {
+        var _this_ = this;
+        this._http.get('api/plugins', this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) { _this_.plugins = p; }, function (e) { console.log(e); }, function (s) { console.log(s); });
+    };
     CreateProjectPage.prototype.saInit = function () {
     };
     CreateProjectPage.prototype.showStage = function () {
         console.log(this.stage);
     };
     CreateProjectPage.prototype.saSetup = function () {
-        //        //create plugins
-        //        if (this.plugins.length) {
-        //            for (var i = 0; i < this.plugins.length; i++) {
-        //                var plug = this.plugins[i];
-        //                this.saTools.push({ _id: i });
-        //                this.saTools[i].plugin = plug;
-        //                this.saTools[i].saImage = this.saToolSprites[0];
-        //                this.saTools[i].name = plug.name;
-        //                this.saTools[i].resizable = true;
-        //                this.saTools[i].size = { w: 150, h: 150 };
-        //               
-        //                this.saTools[i].properties = [];
-        //                for (var j = 0; j < plug.clientParams.length; j++) {
-        //                    this.saTools[i].properties.push({
-        //                        name: plug.clientParams[j].name,
-        //                        type: plug.clientParams[j].type,
-        //                        param: plug.clientParams[j].param,
-        //                        object: name, nv: ''
-        //                    });
-        //                }
-        //                //                this.saTools[0].properties = [
-        //                //                    { name: 'Type', type: 'text', defaultValue: 'KEYWORD_SEARCH', object: name, nv: '' },
-        //                //                    { name: 'Keyword', type: 'text', defaultValue: '', object: name, nv: '' },
-        //                //                ];
-        //            }
-        //        }
+        //if (!CreateProjectPage.__LOAD_ONCE_EDITOR) return false;
         var w = $("#drawBox").width();
         var h = $("#drawBox").height();
-        //        this.renderer = this.saPixi.autoDetectRenderer(w, h, { antialias: true, transparent: false, resolution: 1 });
-        //        document.getElementById("drawBox").appendChild(this.renderer.view);
-        //        $("#drawBox").bind('mousewheel', this.stageZoom);
-        //        // this.saPixi.DOM.Setup(this.renderer,true);
-        //        this.stage = new this.saPixi.Container();
-        //
-        //
-        //        this.connections = new this.saPixi.Graphics();
-        //        this.connections.points = [];
-        //        // this.connections.points.push({x1:0,y1:0,x2:100,y2:100});
-        //        // this.connections.points.push({x:100,y:100});
-        //        // this.connections.push(gfx);
-        //
-        //        this.stage.addChild(this.connections);
-        //        this.stage.mouseup = this.stageMouseUp;
-        //        this.stage.mousemove = this.stageMouseMove;
-        //
-        //        var _this_ = this;
-        //        if (this.projectName !== undefined && this.projectName !== null) {
-        //            this.reload();
-        //        }
-        //        this.saRender();
         // adding new canvas node editor - linker js
-        var linker = $("#drawBox").linker();
-        var node = linker.node({ id: 'first', name: 'First Node', x: 100, y: 100 });
-    };
-    CreateProjectPage.prototype.stageZoom = function (e, d) {
-        console.log(e);
-        this._zoomLevel += (e.originalEvent.wheelDelta / 100);
-        return false;
-    };
-    CreateProjectPage.prototype.stageMouseUp = function (d) {
-        if (this.connectMode) {
-            this.connectMode = false;
-            this._tmpConnection = undefined;
+        this.saLinker = $("#drawBox").linker();
+        //load the project
+        if (this.preloadProject) {
+            this.reload();
         }
     };
-    CreateProjectPage.prototype.stageMouseMove = function (d) {
-        console.log("moving");
+    CreateProjectPage.prototype.zoom = function (steps) {
+        if (steps > 10)
+            steps = 10;
+        if (steps < -10)
+            steps = -10;
+        var czoom = parseFloat($('.linker_board').css("zoom"));
+        $('.linker_board').animate({ zoom: czoom + steps / 100 }, 400);
+        this.previousZoom = parseFloat($(".linker_board").css("zoom"));
     };
-    CreateProjectPage.prototype.getSprite = function (path) {
-        var obj = new this.saPixi.Sprite(this.saPixi.loader.resources[path].texture);
-        obj.anchor.x = 0.5;
-        obj.anchor.y = 0.5;
-        return obj;
-    };
-    CreateProjectPage.prototype.getSpriteResizable = function (path, _w, _h) {
-        var parent = new this.saPixi.Container();
-        parent.width = _w;
-        parent.height = _h;
-        parent.tl = new this.saPixi.Sprite.fromFrame("tl");
-        parent.tm = new this.saPixi.Sprite.fromFrame("tm");
-        parent.tr = new this.saPixi.Sprite.fromFrame("tr");
-        parent.ml = new this.saPixi.Sprite.fromFrame("ml");
-        parent.mm = new this.saPixi.Sprite.fromFrame("mm");
-        parent.mr = new this.saPixi.Sprite.fromFrame("mr");
-        parent.bl = new this.saPixi.Sprite.fromFrame("bl");
-        parent.bm = new this.saPixi.Sprite.fromFrame("bm");
-        parent.br = new this.saPixi.Sprite.fromFrame("br");
-        parent.tl.anchor.x = parent.tm.anchor.x = parent.tr.anchor.x = parent.ml.anchor.x = parent.mm.anchor.x = parent.mr.anchor.x = parent.bl.anchor.x = parent.bm.anchor.x = parent.br.anchor.x = 0.5;
-        parent.tl.anchor.y = parent.tm.anchor.y = parent.tr.anchor.y = parent.ml.anchor.y = parent.mm.anchor.y = parent.mr.anchor.y = parent.bl.anchor.y = parent.bm.anchor.y = parent.br.anchor.y = 0.5;
-        // parent.pivot.x=0.5;
-        // parent.pivot.y=0.5;
-        parent.addChild(parent.tl);
-        parent.addChild(parent.tm);
-        parent.addChild(parent.tr);
-        parent.addChild(parent.ml);
-        parent.addChild(parent.mm);
-        parent.addChild(parent.mr);
-        parent.addChild(parent.bl);
-        parent.addChild(parent.bm);
-        parent.addChild(parent.br);
-        // console.log(tl.height);
-        // 
-        // tl.x=0;tl.y=0;
-        // ml.x=0;
-        parent.tl.x = parent.ml.x = parent.bl.x = -(_w / 2) + (parent.tl.width / 2);
-        parent.tl.y = parent.tm.y = parent.tr.y = -(_h / 2) + (parent.tl.height / 2);
-        parent.ml.y = parent.mm.y = parent.mr.y = 0;
-        parent.bl.y = parent.bm.y = parent.br.y = (_h / 2) - (parent.bl.height / 2);
-        parent.tm.x = parent.mm.x = parent.bm.x = 0;
-        parent.tr.x = parent.mr.x = parent.br.x = (_w / 2) - (parent.tr.width / 2);
-        parent.ml.height = parent.mm.height = parent.mr.height = _h - (parent.ml.height * 2);
-        parent.tm.width = parent.mm.width = parent.bm.width = _w - (parent.tl.width * 2);
-        parent._resizable = true;
-        return parent;
-    };
-    CreateProjectPage.prototype.saUpdate = function () {
-        //update connection curves
-        this.connections.clear();
-        if (this.connections.points) {
-            for (var _i = 0, _a = this.connections.points; _i < _a.length; _i++) {
-                var p = _a[_i];
-                // p.clear();
-                this.connections.lineStyle(4, 0x000000, 1);
-                var ex = p.e.worldTransform.tx, ey = p.e.worldTransform.ty;
-                var sx = p.s.worldTransform.tx, sy = p.s.worldTransform.ty;
-                this.connections.moveTo(sx, sy);
-                this.connections.bezierCurveTo(sx + 50, sy + 50, ex - 50, ey, ex, ey);
-            }
-        }
-        if (this._tmpConnection != undefined) {
-            this.connections.lineStyle(4, 0xCCCCCC, 0.5);
-            var ex = this._tmpConnection.e.worldTransform.tx, ey = this._tmpConnection.e.worldTransform.ty;
-            var sx = this._tmpConnection.s.worldTransform.tx, sy = this._tmpConnection.s.worldTransform.ty;
-            this.connections.moveTo(sx, sy);
-            this.connections.bezierCurveTo(sx + 50, sy + 50, ex - 50, ey, ex, ey);
-        }
-        //logic
-        //zoom logic
-        this.stage.scale.x = this.stage.scale.y = this._zoomLevel;
-        //connection point logic
-        if (this.connectMode) {
-            if (this._tmpConnection != undefined) {
-                this._tmpConnection.e.worldTransform.tx = this.renderer.plugins.interaction.mouse.global.x;
-                this._tmpConnection.e.worldTransform.ty = this.renderer.plugins.interaction.mouse.global.y;
-            }
-            else {
-                this._tmpConnection = { s: this._selectedHole, e: { worldTransform: { tx: 0, ty: 0 } } };
-            }
+    CreateProjectPage.prototype.resetZoom = function () {
+        if (parseFloat($(".linker_board").css("zoom")) != 1.0) {
+            $(".linker_board").css("zoom", 1);
         }
     };
-    CreateProjectPage.prototype.saRender = function () {
-        var _this_ = this;
-        requestAnimationFrame(function () { _this_.saRender(); });
-        //update logic
-        this.saUpdate();
-        this.renderer.backgroundColor = this.bgColor;
-        this.renderer.render(this.stage);
+    CreateProjectPage.prototype.setZoom = function (val) {
+        $(".linker_board").css("zoom", val);
     };
-    CreateProjectPage.prototype.addConnection = function (source, target) {
-    };
-    CreateProjectPage.prototype.addObject = function (oobj) {
-        // console.log(oobj);
-        console.log("Adding Object : " + this.idCounter);
-        var obj = oobj.resizable ? this.getSpriteResizable(oobj.saImage, oobj.size.w, oobj.size.h) : this.getSprite(oobj.saImage);
-        obj._id = this.idCounter;
+    /* methods related to canvas area*/
+    //Adds plugin as component to the canvas area
+    CreateProjectPage.prototype.addObject = function (plug) {
+        var plugin = commons_component_1.Commons.clone(plug);
+        console.log(plugin);
+        //increment the id counter
         this.idCounter += 1;
-        //initialize visible/private properties
-        this.initializeProperties(obj, oobj);
-        //initialize controls
-        this.initializeControls(obj, oobj);
-        //setup event handler
-        var _this_ = this;
-        obj.mousedown = obj.touchstart = function (data) {
-            _this_.onSelect(data);
-        };
-        obj.mousemove = function (data) {
-            _this_.onClickDrag(data, _this_);
-        };
-        ;
-        obj.mouseup = function (data) {
-            _this_.onMouseUp(data, _this_);
-        };
-        ;
-        // var inp = new _this_.saPixi.DOM.Sprite('<input type="text" placeholder="Name">',{x:10,y:10});
-        // this.stage.addChild(inp);
-        this.stage.addChild(obj);
-        console.log(oobj.tpItem + "<<");
-        if (oobj.tpItem != undefined)
-            this.topology.stages[oobj.tpItem].stageChild = obj;
-        console.log(obj);
-        if (!this.preloadProject) {
-            this.addObjToTopology(obj, oobj);
-        }
-        ;
+        //1. create node object
+        var n = this.addStage({ plugin: plugin, name: plugin.name, type: commons_component_1.STAGE_TYPES.STREAM_STAGE, x: 150 });
+        //2. add node object to topology
+        //        this.addObjectToTopology(n);
     };
-    CreateProjectPage.prototype.addObjToTopology = function (obj, oobj) {
-        var tobj = {
-            "id": obj._id,
-            "type": oobj.plugin.type,
-            "plugin": oobj.plugin.plugin
+    CreateProjectPage.prototype.addStage = function (stage) {
+        //1. create linkerjs node 
+        var n = this.createNode(stage);
+        this.addObjectToTopology(n);
+        return n;
+    };
+    //create linkerjs node based on
+    //options :
+    //{type, x location, y location}
+    CreateProjectPage.prototype.createNode = function (stage) {
+        console.log("adding node");
+        console.log(stage);
+        var o = {
+            id: this.idCounter,
+            type: commons_component_1.STAGE_TYPES.UNDEFINED_STAGE,
+            name: "UNDEFINED",
+            x: $(".linker_container").scrollLeft() + parseInt(Math.random() * 100),
+            y: $(".linker_container").scrollTop() + parseInt(Math.random() * 100)
         };
-        this.updateTopologyProperties(tobj, obj);
-        this.topology.stages.push(tobj);
-    };
-    CreateProjectPage.prototype.showPropertiesEditor = function (obj) {
-        this.saSelectedObject = obj;
-        $("#propertiesEditor").modal("show");
-    };
-    CreateProjectPage.prototype.initializeControls = function (obj, oobj) {
-        //remove control
-        var remove = this.getSprite("app/images/cross.png");
-        remove.x = (obj.width / 2);
-        remove.y = -(obj.height / 2) + 10;
-        remove.interactive = true;
-        // console.log(remove);
-        var _this_ = this;
-        remove.mousedown = function (d) {
-            _this_.stage.removeChild(obj);
-            var p;
-            //            for (var i = 0; i < _this_.connections.points.length; i++) {
-            //                p = _this_.connections.points[i];
-            //                if (p.s.parent._id == obj._id || p.e.parent._id == obj._id) {
-            //                    _this_.connections.points.splice(i, 1);
-            //                    i--;
-            //                }
-            //            }
-            var index1 = _this_.findItemIndex(_this_.connections.points, "s.parent._id", obj._id);
-            var index2 = _this_.findItemIndex(_this_.connections.points, "e.parent._id", obj._id);
-            if (index1 != undefined && index1 != null)
-                _this_.connections.points.splice(index1, 1);
-            if (index2 != undefined && index2 != null)
-                _this_.connections.points.splice(index2, 1);
-            setTimeout(function () {
-                _this_.removeFromTopology(obj);
-                obj.destroy({ children: true });
-            }, 100);
-            // delete this;
-            d.stopPropagation();
-        };
-        obj.addChild(remove);
-        //edit control
-        var edit = this.getSprite("app/images/edit.png");
-        edit.x = (obj.width / 2) - 20;
-        edit.y = -(obj.height / 2) + 10;
-        edit.interactive = true;
-        // console.log(remove);
-        edit.mousedown = function (d) {
-            _this_.showPropertiesEditor(obj);
-            d.stopPropagation();
-        };
-        obj.addChild(edit);
-        //initialize connection points
-        if (oobj.plugin.type == 'DATABASE' || oobj.plugin.type == 'STREAM_STAGE') {
-            _this_.addConnectionHoles(obj, false, false, true, false);
+        var node = {};
+        o = commons_component_1.Commons.extend(o, stage);
+        //validate the params
+        if (!this.validateNode(o)) {
+            console.log("Validation failed for new node");
+            return {};
         }
-        else {
-            _this_.addConnectionHoles(obj, false, true, false, true);
+        //create node
+        node = this.saLinker.node(o);
+        //create connectors
+        var connectorIn, connectorOut;
+        //based on type, create the connectors
+        for (var _i = 0, _a = o.plugin.inputs == undefined ? [] : o.plugin.inputs; _i < _a.length; _i++) {
+            var pi = _a[_i];
+            connectorIn = node.input(pi.id, pi.name);
         }
-    };
-    CreateProjectPage.prototype.addConnectionHoles = function (obj, top, right, bottom, left) {
-        var _this_ = this;
-        if (left) {
-            //hole-l control
-            var lhole = this.getSprite("app/images/hole.png");
-            lhole.name = "lhole";
-            lhole.anchor.x = 0.5;
-            lhole.anchor.y = 0.5;
-            lhole.x = -(obj.width / 2);
-            lhole.y = 0;
-            lhole.interactive = true;
-            lhole.mouseup = function (d) {
-                _this_.chMouseUp(d, lhole);
-            };
-            lhole.mousedown = function (d) {
-                _this_.chMouseDown(d, lhole);
-            };
-            obj.addChild(lhole);
+        for (var _b = 0, _c = o.plugin.outputs == undefined ? [] : o.plugin.outputs; _b < _c.length; _b++) {
+            var po = _c[_b];
+            connectorOut = node.output(po.id, po.name);
         }
-        if (right) {
-            //hole-r control
-            var rhole = this.getSprite("app/images/hole.png");
-            rhole.name = "rhole";
-            rhole.anchor.x = 0.5;
-            rhole.anchor.y = 0.5;
-            rhole.x = (obj.width / 2);
-            rhole.y = 0;
-            rhole.interactive = true;
-            rhole.mouseup = function (d) {
-                _this_.chMouseUp(d, rhole);
-            };
-            rhole.mousedown = function (d) {
-                _this_.chMouseDown(d, rhole);
-            };
-            obj.addChild(rhole);
-        }
-        if (bottom) {
-            //hole-r control
-            var bhole = this.getSprite("app/images/hole.png");
-            bhole.name = "bhole";
-            bhole.anchor.x = 0.5;
-            bhole.anchor.y = 0.5;
-            bhole.x = 0;
-            bhole.y = obj.height / 2;
-            bhole.interactive = true;
-            bhole.mouseup = function (d) {
-                _this_.chMouseUp(d, bhole);
-            };
-            bhole.mousedown = function (d) {
-                _this_.chMouseDown(d, bhole);
-            };
-            obj.addChild(bhole);
-        }
-        if (top) {
-            //hole-r control
-            var thole = this.getSprite("app/images/hole.png");
-            thole.name = "thole";
-            thole.anchor.x = 0.5;
-            thole.anchor.y = 0.5;
-            thole.x = 0;
-            thole.y = -obj.height / 2;
-            thole.interactive = true;
-            thole.mouseup = function (d) {
-                _this_.chMouseUp(d, thole);
-            };
-            thole.mousedown = function (d) {
-                _this_.chMouseDown(d, thole);
-            };
-            obj.addChild(thole);
-        }
-    };
-    CreateProjectPage.prototype.chMouseUp = function (d, obj) {
-        var _this_ = this;
-        console.log(_this_.connectMode);
-        if (_this_.connectMode) {
-            if (obj.parent._id == _this_._selectedHole.parent._id) {
-                console.log("Same parent! Not connecting.");
-            }
-            else {
-                _this_._tmpConnection.e = obj;
-                _this_.connections.points.push(_this_._tmpConnection);
-                _this_.addConnectionToTopology(_this_._tmpConnection);
-                _this_.connectMode = false;
-                console.log("Connected.");
-                _this_._tmpConnection = undefined;
-            }
-        }
-        else {
-            _this_.connectMode = true;
-            _this_._selectedHole = obj;
-        }
-        d.stopPropagation();
-    };
-    CreateProjectPage.prototype.addConnectionToTopology = function (conn) {
-        var _this_ = this;
-        _this_.topology.connections.push({
-            e: conn.e.parent._id,
-            s: conn.s.parent._id,
-            ehole: conn.e.name,
-            shole: conn.s.name,
+        //add the connections to connections array
+        this.connections.push({
+            id: node.id,
+            in: connectorIn,
+            out: connectorOut
         });
+        //event handlers
+        this.attachEvents(o, node);
+        console.log(node);
+        console.log("Created new node with options : " + o);
+        return node;
     };
-    CreateProjectPage.prototype.chMouseDown = function (d, obj) {
-        d.stopPropagation();
+    CreateProjectPage.prototype.addObjectToTopology = function (obj) {
+        var _this_ = this;
+        _this_.topologyCanvas.push(obj);
     };
-    CreateProjectPage.prototype.initializeProperties = function (obj, oobj) {
-        //subcomponent propeties
-        //set default properties
-        // obj.anchor.x = 0.5;
-        // obj.anchor.y = 0.5;
-        oobj.pos = this.findItem(this.topology.stages, "id", obj._id);
-        oobj.pos = obj.pos == undefined ? undefined : oobj.pos.pos;
-        obj.properties = oobj.properties == undefined ? [] : oobj.properties;
-        obj.position.x = oobj.pos != undefined ? oobj.pos.x : 200 * Math.random() + 30;
-        obj.position.y = oobj.pos != undefined ? oobj.pos.y : 200;
-        obj.interactive = true;
-        obj.name = oobj.plugin.name;
-        //visible properties
-        //        var _elementNum = 2;
-        //        for (var k of obj.properties) {
-        //            var kn = new this.saPixi.Text(k.name + ": ", { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
-        //
-        //            kn.x = -(obj.width / 2) + 20;
-        //            kn.y = -(obj.height / 2) + (20 * _elementNum);
-        //            var kv = new this.saPixi.Text( k.defaultValue, { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
-        //            if (this.projectName == "" || this.projectName == undefined || this.projectName == null) {
-        //                 kv.text = k.defaultValue;
-        //            }
-        //            else{
-        //                kv.text = k.nv;
-        //            }
-        //            kv.x = -(obj.width / 2) + 20 + kn.width + 20;
-        //            kv.y = -(obj.height / 2) + (20 * _elementNum);
-        //            obj.addChild(kn);
-        //            obj.addChild(kv);
-        //            _elementNum += 1;
-        //
-        //            k.object = kv;
-        //            k.nv = kv.text;
-        //        }
-        //name
-        var name = null;
-        name = new this.saPixi.Text(obj.name, { fontFamily: 'Arial', fontSize: 12, fill: 0xFFFFFF, align: 'left', wordWrap: true });
-        name.x = -(obj.width / 2) + 20;
-        name.y = -(obj.height / 2) + 20;
-        //obj.properties.push({ name: 'Name', type: 'text', object: name, nv: name.text });
-        obj.addChild(name);
-    };
-    CreateProjectPage.prototype.updateProperties = function () {
-        for (var _i = 0, _a = this.saSelectedObject.properties; _i < _a.length; _i++) {
-            var inp = _a[_i];
-            console.log(inp);
-            inp.object = { text: "" };
-            inp.object.text = inp.nv;
-            for (var _b = 0, _c = this.topology.stages; _b < _c.length; _b++) {
-                var o = _c[_b];
-                if (o.id == this.saSelectedObject._id) {
-                    this.updateTopologyProperties(o, this.saSelectedObject);
-                }
-            }
-        }
-    };
-    CreateProjectPage.prototype.removeFromTopology = function (obj) {
-        for (var i = 0; i < this.topology.stages.length; i++) {
-            if (this.topology.stages[i].id == obj._id) {
-                this.topology.stages.splice(i, 1);
+    CreateProjectPage.prototype.removeObjectFromTopology = function (obj) {
+        var _this_ = this;
+        for (var i = 0; i < _this_.topologyCanvas.length; i++) {
+            var stage = _this_.topologyCanvas[i];
+            if (stage.id == obj.id) {
+                console.log(stage.id + " / " + obj.id);
+                _this_.topologyCanvas.splice(i, 1);
                 break;
             }
         }
     };
-    CreateProjectPage.prototype.updateTopologyProperties = function (item, obj) {
-        item.metadata = {};
-        for (var _i = 0, _a = obj.properties; _i < _a.length; _i++) {
-            var p = _a[_i];
-            item.metadata[p.param] = p.nv;
-        }
+    /*
+     *Attach events to nodes
+     *events: drag, remove and settings
+     */
+    CreateProjectPage.prototype.attachEvents = function (o, node) {
+        var _this_ = this;
+        //drag event
+        node.onDrag = function (x, y) {
+            this.x = x;
+            this.y = y;
+        };
+        //settings event
+        node.onSetting = function () {
+            _this_.showProperties(this);
+        };
+        // remove event
+        node.onRemove = function () {
+            _this_.removeObjectFromTopology(this);
+        };
     };
-    CreateProjectPage.prototype.highlightSelected = function () {
-        if (this.saSelectedObject != undefined) {
-        }
+    CreateProjectPage.prototype.updateIdCounter = function () {
+        this.idCounter += 1;
     };
-    CreateProjectPage.prototype.onSelect = function (data) {
-        this.saSelectedObject = data.target;
-        this.dragging = false;
-        this.dragMode = true;
-    };
-    CreateProjectPage.prototype.onClickDrag = function (data, _this_) {
-        if (_this_.dragMode) {
-            _this_.saSelectedObject.transform.position._x = data.data.global.x;
-            _this_.saSelectedObject.transform.position._y = data.data.global.y;
-            _this_.dragging = true;
+    CreateProjectPage.prototype.validateNode = function (options) {
+        var invalids = 0;
+        //check for existing id
+        if (options.id != undefined) {
+            if (options.id < this.idCounter) {
+                invalids += 1;
+            }
         }
+        return invalids > 0 ? false : true;
     };
-    CreateProjectPage.prototype.onMouseUp = function (data, _this_) {
-        if (!_this_.dragging) {
-            _this_.cross.visible = true;
-        }
-        else {
-            _this_.dragging = false;
-            //update position of object in topology
-            var stage = _this_.findItemIndex(_this_.topology.stages, "id", data.target._id);
-            _this_.topology.stages[stage].pos = { x: data.target.transform.position._x, y: data.target.transform.position._y };
-        }
-        _this_.dragMode = false;
+    /*
+     * Update/Edit properties of each stage
+     *
+     */
+    CreateProjectPage.prototype.showProperties = function (node) {
+        var _this_ = this;
+        _this_.selectedNode = node;
+        console.log(_this_.selectedNode);
+        $("#propertiesEditor").modal("show");
     };
-    CreateProjectPage.prototype.trimTopology = function (tp) {
-        for (var i = 0; i < tp.stages.length; i++) {
-            tp.stages[i].stageChild = undefined;
+    CreateProjectPage.prototype.stripUnwantedNodeProperties = function () {
+        var stages = [];
+        for (var _i = 0, _a = this.topologyCanvas; _i < _a.length; _i++) {
+            var s = _a[_i];
+            var ns = {
+                pathsIn: {},
+                pathsOut: {},
+                inputs: [],
+                outputs: []
+            };
+            for (var _b = 0, _c = this.relevantNodeProps; _b < _c.length; _b++) {
+                var prop = _c[_b];
+                ns[prop] = s[prop];
+            }
+            if (s.hasOwnProperty("pathsIn")) {
+                ns.pathsIn = { p: {} };
+                for (var _d = 0, _e = Object.keys(s.pathsIn); _d < _e.length; _d++) {
+                    var p = _e[_d];
+                    if (s.pathsIn[p].length <= 0)
+                        break;
+                    var from = {
+                        id: s.pathsIn[p][0][1]["id"],
+                        name: s.pathsIn[p][0][1]["name"],
+                        node: {
+                            id: s.pathsIn[p][0][1]["node"]["id"],
+                            name: s.pathsIn[p][0][1]["node"]["name"],
+                        }
+                    };
+                    var to = {
+                        id: s.pathsIn[p][0][2]["id"],
+                        name: s.pathsIn[p][0][2]["name"],
+                        node: {
+                            id: s.pathsIn[p][0][2]["node"]["id"],
+                            name: s.pathsIn[p][0][2]["node"]["name"],
+                        }
+                    };
+                    ns.pathsIn[p] = { from: from, to: to };
+                }
+            }
+            if (s.hasOwnProperty("pathsOut")) {
+                for (var _f = 0, _g = Object.keys(s.pathsOut); _f < _g.length; _f++) {
+                    var p = _g[_f];
+                    if (s.pathsOut[p].length <= 0)
+                        break;
+                    var from = {
+                        id: s.pathsOut[p][0][1]["id"],
+                        name: s.pathsOut[p][0][1]["name"],
+                        node: {
+                            id: s.pathsOut[p][0][1]["node"]["id"],
+                            name: s.pathsOut[p][0][1]["node"]["name"],
+                        }
+                    };
+                    var to = {
+                        id: s.pathsOut[p][0][2]["id"],
+                        name: s.pathsOut[p][0][2]["name"],
+                        node: {
+                            id: s.pathsOut[p][0][2]["node"]["id"],
+                            name: s.pathsOut[p][0][2]["node"]["name"],
+                        }
+                    };
+                    ns.pathsOut[p] = { from: from, to: to };
+                }
+            }
+            if (s.hasOwnProperty("outputs")) {
+                ns.outputs = [];
+                for (var j = 0; j < s.outputs.length; j++) {
+                    var o = s.outputs[j];
+                    ns.outputs[j] = {
+                        id: o.id,
+                        name: o.name,
+                        node: {
+                            id: o.node.id,
+                            name: o.node.name
+                        }
+                    };
+                }
+            }
+            if (s.hasOwnProperty("inputs")) {
+                ns.inputs = [];
+                for (var j = 0; j < s.inputs.length; j++) {
+                    var o = s.inputs[j];
+                    s.inputs[j] = {
+                        id: o.id,
+                        name: o.name,
+                        node: {
+                            id: o.node.id,
+                            name: o.node.name
+                        }
+                    };
+                }
+            }
+            stages.push(ns);
+        }
+        //cyclic structure fix
+        //for key pathsIn
+        return stages;
+    };
+    CreateProjectPage.prototype.preloadStages = function (topology) {
+        //load all stages
+        for (var i = 0; i < topology.stages.length; i++) {
+            var s = topology.stages[i];
+            this.addStage(s);
+            //also update the idCounter to larget value
+            if (s.id > this.idCounter) {
+                this.idCounter = s.id;
+            }
+        }
+        //one done, make the connections
+        for (var i = 0; i < topology.stages.length; i++) {
+            var s = topology.stages[i];
+            var outs = s.pathsOut;
+            var conn1, conn2;
+            for (var _i = 0, _a = Object.keys(outs); _i < _a.length; _i++) {
+                var k = _a[_i];
+                var path = outs[k];
+                console.log(path);
+                if (path.length <= 0)
+                    continue;
+                for (var j = 0; j < this.connections.length; j++) {
+                    var con = this.connections[j];
+                    if (path.from.node.id == con.id) {
+                        conn1 = con.out;
+                    }
+                    if (path.to.node.id == con.id) {
+                        conn2 = con.in;
+                    }
+                }
+            }
+            console.log("Connecting : ");
+            if (conn1 == undefined || conn2 == undefined)
+                continue;
+            //            console.log(conn1.name);
+            //            console.log(conn2.name);
+            conn1.connect(conn2);
         }
     };
     CreateProjectPage.prototype.save = function () {
         commons_component_1.Commons.loaderShow();
-        //        this.topology.connections = this.connections.points;
-        //fill up fixed props
-        // remove all the unwanted properties before save
-        this.trimTopology(this.topology);
-        this.http.post('api/projects/save', { project: this.topology }, this.headers).map(function (response) { return response.json(); })
+        //first strip unwanted data from topology
+        var tmp = commons_component_1.Commons.clone(this.topology);
+        tmp.stages = this.stripUnwantedNodeProperties();
+        this.http.post('api/projects/save', { project: tmp }, this.headers).map(function (response) { return response.json(); })
             .subscribe(function (d) {
-            console.log(d);
             commons_component_1.Commons.loaderDone();
         }, function (e) { console.log(e); }, function (s) { console.log(s); });
-    };
-    CreateProjectPage.prototype.updateDrawableProperties = function (item, o, cb) {
-        for (var i = 0; i < o.properties.length; i++) {
-            o.properties[i].nv = item.metadata[o.properties[i].param];
-            o.properties.object = { text: "" };
-        }
-        cb(o);
-    };
-    CreateProjectPage.prototype.getTool = function (name) {
-        for (var i = 0; i < this.saTools.length; i++) {
-            if (name == this.saTools[i].plugin.name) {
-                return this.saTools[i];
-            }
-        }
-    };
-    CreateProjectPage.prototype.drawTopology = function (tp) {
-        var _this_ = this;
-        for (var i = 0; i < tp.stages.length; i++) {
-            var oobj = JSON.parse(JSON.stringify(this.getTool(tp.stages[i].plugin)));
-            oobj.tpItem = i;
-            if (oobj !== undefined && oobj !== null) {
-                this.updateDrawableProperties(tp.stages[i], oobj, function (o) {
-                    _this_.idCounter = tp.stages[i].id;
-                    _this_.addObject(o);
-                });
-            }
-        }
-        //TODO: replace timeout
-        setTimeout(function () {
-            _this_.formatConnections(tp.connections);
-        }, 1000);
-    };
-    CreateProjectPage.prototype.formatConnections = function (conn) {
-        var _this_ = this;
-        var s = {}, e = {};
-        console.log(this.connections);
-        for (var _i = 0, conn_1 = conn; _i < conn_1.length; _i++) {
-            var c = conn_1[_i];
-            console.log("For conn : ");
-            console.log(c);
-            for (var i = 0; i < _this_.topology.stages.length; i++) {
-                console.log("For stage : ");
-                console.log(_this_.topology.stages[i].id);
-                if (_this_.topology.stages[i].id == c.s) {
-                    for (var j = 0; j < _this_.topology.stages[i].stageChild.children.length; j++) {
-                        if (_this_.topology.stages[i].stageChild.children[j].name == c.shole) {
-                            s = _this_.topology.stages[i].stageChild.children[j];
-                        }
-                        ;
-                    }
-                }
-                if (this.topology.stages[i].id == c.e) {
-                    for (var j = 0; j < _this_.topology.stages[i].stageChild.children.length; j++) {
-                        if (_this_.topology.stages[i].stageChild.children[j].name == c.ehole) {
-                            e = _this_.topology.stages[i].stageChild.children[j];
-                        }
-                        ;
-                    }
-                }
-            }
-            _this_.connections.points.push({
-                s: s, e: e
-            });
-        }
     };
     CreateProjectPage.prototype.reload = function () {
         var _this = this;
@@ -658,8 +391,8 @@ var CreateProjectPage = (function () {
             _this.topology = p;
             _this.topology.name = _this.projectName;
             _this.preloadProject = true;
+            _this.preloadStages(p);
             //this.connections.points = this.topology.connections;
-            _this.drawTopology(_this.topology);
             _this.preloadProject = false;
         }, function (e) { console.log(e); }, function (s) { console.log(s); });
     };

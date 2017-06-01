@@ -1,12 +1,24 @@
 {
 	"name":"Report",
 	"_v":"1.0.0",
-	"type":"STREAM_STAGE",
+	"type":"REPORT_STAGE",
 	"plugin":"Report",
 	"fqcn":"com.sa.plugins.ReportGenerator",
 	"package":"com.sa.plugins",
         "jar":"target/SAReport-1.0-SNAPSHOT.jar",
 	"description" : "Plugin to generate reports based on data checkpoints",
+	"inputs":[
+		{
+			"id":"in1",
+			"name":"data-in"
+		}
+	],
+	"outputs":[
+		{
+			"id":"out1",
+			"name":"report"
+		}
+	],
 	"clientParams":[
 		{
 		"type":"text",

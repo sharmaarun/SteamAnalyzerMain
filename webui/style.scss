@@ -19,31 +19,31 @@ limitations under the License.
 */
 
 @font-face {
-  font-family: 'Material Icons';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Material Icons'), local('MaterialIcons-Regular'), url(./material-font.woff2) format('woff2');
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Material Icons'), local('MaterialIcons-Regular'), url(./material-font.woff2) format('woff2');
 }
 
 .material-icons {
-  font-family: 'Material Icons';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-feature-settings: 'liga';
-  -webkit-font-smoothing: antialiased;
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
 }
 
 body {
-    
-    
+
+
     .loader {
         position:absolute;
         top:0px;
@@ -56,21 +56,29 @@ body {
         z-index:1;
         text-align: center;
         display:none;
-        
+
         .loaderIcon {
             display:none;
         }
-        
+
         .loaderDoneText {
             display:none;
             font-size:12px;
         }
     }
-    
 
-    
+
+
     font-family: sans-serif;
-    
+    .floating-toolbox {
+        position: absolute;
+        /*padding: 0px 10px 0px 10px;*/
+        right: 40px;
+        color: white;
+        z-index: 1001;
+        background: rgba(255, 104, 56, 0.49);
+        bottom:40px;
+    }
     #drawBox {
         position:absolute;
         bottom:10px;
@@ -79,28 +87,28 @@ body {
         top:120px;
         height:auto !important;
     }
-    
+
     #componentsBox {
         position:absolute;
         bottom:10px;
         left:10px;
         right:82%;
         top:120px;
-        
-        
+
+
     }
     .nav.nav-light-orange {
         background:#ff6838;
     }
-    
+
     .center-text {
         text-align: center;
     }
-    
+
     .h1-big {
         font-size:72px;
     }
-    
+
     .navbar-brand {
         background-color:#ff6231;
         color:white;
@@ -111,7 +119,7 @@ body {
         bottom:0;
         z-index:99999
     }
-    
+
     .snackbar{
         overflow:hidden;
         clear:both;
@@ -120,21 +128,21 @@ body {
         cursor:pointer;
         opacity:0
     }
-    
+
     .snackbar.snackbar-opened{
         height:auto;
         opacity:1
     }
-    
-    
-    
+
+
+
     /*bootstrap fixes*/
     .panel.panel-info>.panel-heading {
         background-image: none;
     }
-    
-    
-    
+
+
+
     @media (max-width:767px){
         #snackbar-container{
             left:0!important;
@@ -144,11 +152,11 @@ body {
         #snackbar-container .snackbar{
             min-width:100%
         }
-        
+
         #snackbar-container [class="snackbar snackbar-opened"]~.snackbar.toast{
             margin-top:20px
         }
-        
+
         #snackbar-container [class="snackbar snackbar-opened"]{
             border-radius:0;margin-bottom:0
         }

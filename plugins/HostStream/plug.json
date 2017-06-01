@@ -7,6 +7,13 @@
 	"package":"com.sa.plugins",
         "jar":"target/SAHostStream-1.0-SNAPSHOT.jar",
 	"description" : "A plugin that captures incoming raw text strings from specified host and port.",
+	"description" : "Plugin to generate reports based on data checkpoints",
+	"outputs":[
+		{
+			"id":"out1",
+			"name":"stream-out"
+		}
+	],
 	"clientParams":[
 	{
 		"type":"text",

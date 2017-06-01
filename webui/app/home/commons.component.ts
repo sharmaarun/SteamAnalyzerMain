@@ -19,8 +19,20 @@ import { Injectable, Pipe, PipeTransform } from '@angular/core';
 
 @Injectable()
 export class Commons {
-   
+
     public static loaderTimer = -1;
+
+
+    public static getUUID() {
+        var d = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
+    }
+
     public static loaderShow() {
         console.log("in loaershow");
         var loader = document.getElementById("loaderComponent");
@@ -30,47 +42,70 @@ export class Commons {
         var li = document.getElementById("loaderIcon");
         li.style.display = "block";
     }
-    
+
     public static loaderDone(msg) {
-        
+
         clearTimeout(Commons.loaderTimer);
         var ldt = document.getElementById("loaderDoneText");
         ldt.style.display = "block";
         var li = document.getElementById("loaderIcon");
         li.style.display = "none";
-        if(msg!==undefined && msg!=="") {
-         alert(msg);   
+        if (msg !== undefined && msg !== "") {
+            alert(msg);
         }
-        Commons.loaderTimer = setTimeout(function(){
+        Commons.loaderTimer = setTimeout(function() {
             var loader = document.getElementById("loaderComponent");
-        loader.style.display = "none";
-        var ldt = document.getElementById("loaderDoneText");
-        ldt.style.display = "none";
-        var li = document.getElementById("loaderIcon");
-        li.style.display = "none";
-        },3000);
+            loader.style.display = "none";
+            var ldt = document.getElementById("loaderDoneText");
+            ldt.style.display = "none";
+            var li = document.getElementById("loaderIcon");
+            li.style.display = "none";
+        }, 3000);
     }
-   
-    
+
+
     public static loaderError(output) {
         alert(output);
     }
-    
+
     public static toast(options) {
         var o = {
-            content:"Ola!",
-            timeout:2000
+            content: "Ola!",
+            timeout: 2000
         };
-        if(options!=undefined && options!=null && options !="") {
+        if (options != undefined && options != null && options != "") {
             o = options;
         }
-        
+
         $.snackbar(o);
-        
-        
+
+
     }
-    
-    
+
+    public containsProperty(obj, prop) {
+        var props = Object.keys(obj);
+        for (let p of props) {
+            if (p == prop) {
+                return true;
+            }
+        }
+    }
+
+    public static extend(o1, o2) {
+        var out = o1;
+        var k2 = Object.keys(o2);
+
+        for (let kj of k2) {
+            out[kj] = o2[kj];
+        }
+        return out;
+    }
+
+    public static clone(obj) {
+       return $.extend(true,{},obj);
+    }
+
+
 }
 
 @Pipe({
@@ -78,10 +113,10 @@ export class Commons {
 })
 @Injectable()
 export class FilterProjectsPipe implements PipeTransform {
-    transform(items:any[], args?):any[] { 
-        if (!items) return [];  
-        if (args=="" || args==undefined || args==null) return items;      
-        return items.filter(it => {if(args=="" || args==undefined || args==null){ return true; } else {return it.displayName==undefined?false:it.displayName.indexOf(args)!==-1}});
+    transform(items: any[], args?): any[] {
+        if (!items) return [];
+        if (args == "" || args == undefined || args == null) return items;
+        return items.filter(it => { if (args == "" || args == undefined || args == null) { return true; } else { return it.displayName == undefined ? false : it.displayName.indexOf(args) !== -1 } });
     }
 }
 
@@ -91,9 +126,9 @@ export class FilterProjectsPipe implements PipeTransform {
 })
 @Injectable()
 export class FilterPipe implements PipeTransform {
-    transform(items:any[], args?):any[] { 
-        if (!items) return [];        
-        return items.filter(it => {if(args=="" || args==undefined || args==null){ return true; } else {return it.indexOf(args)!==-1}});
+    transform(items: any[], args?): any[] {
+        if (!items) return [];
+        return items.filter(it => { if (args == "" || args == undefined || args == null) { return true; } else { return it.indexOf(args) !== -1 } });
     }
 }
 
@@ -102,10 +137,18 @@ export class FilterPipe implements PipeTransform {
 })
 @Injectable()
 export class FilterPropsPipe implements PipeTransform {
-    transform(items:any[],  args?):any[] { 
-        let [prop,val] = args;
-        if (prop==undefined) return [];
-        if (!items) return [];        
-        return items.filter(it => {if(args=="" || args==undefined || args==null){ return true; } else {return it[prop].indexOf(val)!==-1}});
+    transform(items: any[], args?): any[] {
+        let [prop, val] = args;
+        if (prop == undefined) return [];
+        if (!items) return [];
+        return items.filter(it => { if (args == "" || args == undefined || args == null) { return true; } else { return it[prop].indexOf(val) !== -1 } });
     }
+}
+
+export enum STAGE_TYPES {
+    UNDEFINED_STAGE = 0,
+    STREAM_STAGE,
+    PROCESS_STAGE,
+    DATABASE_STAGE,
+    REPORT_STAGE
 }

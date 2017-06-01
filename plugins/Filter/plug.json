@@ -1,12 +1,24 @@
 {
 	"name":"Filter",
 	"_v":"1.0.0",
-	"type":"STREAM_STAGE",
+	"type":"PROCESS_STAGE",
 	"plugin":"Filter",
 	"fqcn":"com.sa.plugins.Filter",
 	"package":"com.sa.plugins",
         "jar":"target/SAFilter-1.0-SNAPSHOT.jar",
 	"description" : "Plugin to generate reports based on data checkpoints",
+	"inputs":[
+		{
+			"id":"in1",
+			"name":"data-in"
+		}
+	],
+	"outputs":[
+		{
+			"id":"out1",
+			"name":"data-filtered"
+		}
+	],
 	"clientParams":[
 		{
 		"type":"text",
