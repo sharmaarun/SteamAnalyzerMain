@@ -41,7 +41,14 @@ public class StreamAnalyzer {
     private static JavaSparkContext context;
     private static ConfigurationManager config;
     private static Map<String, String> arguments;
+
+    //job argument defaults
+    private static String applicationId;
+    private static String applicationName;
+    private static String applicationPath;
     private static String sparkMasterURL;
+    private static String hdfsMaster;
+    private static String driverId;
 
     public StreamAnalyzer(JavaSparkContext _sc) {
         context = _sc;
@@ -60,13 +67,10 @@ public class StreamAnalyzer {
                 try {
                     initializeArguments(args);
                     //check all arguments to the program and config accordingly
-
-                    sparkMasterURL = System.getProperty("sparkMasterURL") == null ? "localhost[*]" : System.getProperty("sparkMasterURL");
-                    String name = arguments.get("applicationName") == null ? "Default" : arguments.get("applicationName");
                     SparkConf conf = new SparkConf();
-                    conf.setAppName(name)
+                    conf.setAppName(applicationName)
                             .setMaster(sparkMasterURL).set("spark.scheduler.mode", "FAIR");
-                    context = new JavaSparkContext(sparkMasterURL, name + "__" + UUID.randomUUID());
+                    context = new JavaSparkContext(sparkMasterURL, applicationName);
                 } catch (Exception ex) {
                     logger.error("Error while initializing spark context : ", ex);
                     return null;
@@ -106,15 +110,34 @@ public class StreamAnalyzer {
             }
         }
 
-        if (arguments.get("applicationName") == null) {
-            arguments.put("applicationName", "Default");
-            System.setProperty("applicationName", "Default");
+        /*
+        Enter default values for all the argument fields
+         */
+        applicationId = UUID.randomUUID().toString();
+        applicationName = "Default" + applicationId;
+        applicationPath = "/" + applicationName;
+        sparkMasterURL = "localhost[*]";
+        hdfsMaster = "hdfs:localhost:9000";
+
+        /*
+        Check for supplied arguments and fill arguments and system properties map acordingly
+         */
+        if (arguments.get("applicationId") != null) {
+            applicationId = arguments.get("applicationId");
+        }
+        if (arguments.get("applicationName") != null) {
+            applicationName = arguments.get("applicationName");
+        }
+        if (arguments.get("hdfsMaster") != null) {
+            hdfsMaster = arguments.get("hdfsMaster");
+        }
+        if (arguments.get("sparkMasterURL") != null) {
+            sparkMasterURL = arguments.get("sparkMasterURL");
+        }
+        if (arguments.get("applicationPath") != null) {
+            applicationPath = arguments.get("applicationPath");
         }
 
-//        if (arguments.get("hdfsMaster") == null) {
-//            arguments.put("hdfsMaster", "");
-//            System.setProperty("applicationName", "Default");
-//        }
     }
 
     private String getProperty(String key) {
@@ -132,5 +155,55 @@ public class StreamAnalyzer {
     public void setContext(JavaSparkContext context) {
         this.context = context;
     }
+
+    public String getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(String applicationId) {
+        StreamAnalyzer.applicationId = applicationId;
+    }
+
+    public String getApplicationName() {
+        return applicationName;
+    }
+
+    public void setApplicationName(String applicationName) {
+        StreamAnalyzer.applicationName = applicationName;
+    }
+
+    public String getHdfsMaster() {
+        return hdfsMaster;
+    }
+
+    public void setHdfsMaster(String hdfsMaster) {
+        StreamAnalyzer.hdfsMaster = hdfsMaster;
+    }
+
+    public String getDriverId() {
+        return driverId;
+    }
+
+    public void setDriverId(String driverId) {
+        StreamAnalyzer.driverId = driverId;
+    }
+
+    public  String getApplicationPath() {
+        return applicationPath;
+    }
+
+    public  void setApplicationPath(String applicationPath) {
+        StreamAnalyzer.applicationPath = applicationPath;
+    }
+
+    public  String getSparkMasterURL() {
+        return sparkMasterURL;
+    }
+
+    public  void setSparkMasterURL(String sparkMasterURL) {
+        StreamAnalyzer.sparkMasterURL = sparkMasterURL;
+    }
+    
+    
 
 }

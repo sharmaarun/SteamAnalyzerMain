@@ -19,11 +19,12 @@ import {Component} from '@angular/core';
 import {HTTP_PROVIDERS, Http, Response, Headers, RequestOptions} from "@angular/http";
 import {Observable} from "rxjs/Rx";
 import {ActivatedRoute} from '@angular/router';
-import {Commons, STAGE_TYPES} from '../home/commons.component';
+import {Commons, STAGE_TYPES, FilterPluginsPipe, MouseManager} from '../home/commons.component';
 
 @Component({
-    templateUrl: 'app/project/create-project.component.html'
-     providers: [HTTP_PROVIDERS]
+    templateUrl: 'app/project/create-project.component.html',
+    providers: [HTTP_PROVIDERS],
+    pipes: [FilterPluginsPipe]
 })
 
 export class CreateProjectPage {
@@ -72,6 +73,8 @@ export class CreateProjectPage {
     _tmpConnection;
     _selectedHole;
 
+    public suggestSchemaPropList = [], suggestSchemaArgs = [];
+
     //event flags
     dragMode = false;
     dragging = false;
@@ -94,6 +97,13 @@ export class CreateProjectPage {
         setTimeout(function() {
             _this_.saSetup();
             CreateProjectPage.__LOAD_ONCE_EDITOR = false;
+            $("#componentsBox .divider").mousedown(function(e) {
+                _this_.startResize(e);
+            });
+            $("#componentsBox .divider").mouseup(function(e) {
+                $("body").off('mousemove');
+            });
+
         }, 1000);
 
 
@@ -114,8 +124,28 @@ export class CreateProjectPage {
 
     }
 
+
+    public startResize(e) {
+        //text selection fix
+        if (document.selection) {
+            document.selection.empty();
+        } else if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        }
+        $("body").mousemove(function(ev) {
+            var l = parseInt($("body").width()) - ev.pageX - 3;
+            $("#componentsBox").css("right", l + "px");
+            var r = parseInt(ev.pageX + 3);
+            $("#drawBox").css("left", r + "px");
+        });
+
+
+
+
+    }
+
     public showStage() {
-        console.log(this.stage);
+//        console.log(this.stage);
     }
 
     public saSetup() {
@@ -131,6 +161,25 @@ export class CreateProjectPage {
         if (this.preloadProject) {
             this.reload();
         }
+
+    }
+
+    public suggestSchemaProps(val) {
+        var _this_ = this;
+        if (val == undefined) return;
+        val = val.split(",")[val.split(",").length - 1].trim();
+        var args = Commons.clone(_this_.suggestSchemaPropList);
+        var tmpArr = [];
+        for(let a of Object.keys(args)) {
+            var arr = args[a].values==undefined?[]:args[a].values;
+            for(let it of arr){
+                if(it.indexOf(val)!==-1) {
+                    tmpArr.push({from:args[a].stage,value:it});
+                }
+            }
+//            tmpArr = tmpArr.concat(arr);
+        }
+        _this_.suggestSchemaArgs = tmpArr;
 
     }
 
@@ -158,11 +207,11 @@ export class CreateProjectPage {
     //Adds plugin as component to the canvas area
     public addObject(plug) {
         var plugin = Commons.clone(plug);
-        console.log(plugin);
+//        console.log(plugin);
         //increment the id counter
         this.idCounter += 1;
         //1. create node object
-        let n = this.addStage({ plugin: plugin, name: plugin.name, type: STAGE_TYPES.STREAM_STAGE, x: 150 });
+        let n = this.addStage({ plugin: plugin, name: plugin.name, type: Commons.getEnumFromString(STAGE_TYPES, plugin.type), x: 150 });
         //2. add node object to topology
         //        this.addObjectToTopology(n);
 
@@ -183,8 +232,9 @@ export class CreateProjectPage {
     //options :
     //{type, x location, y location}
     public createNode(stage) {
-        console.log("adding node");
-        console.log(stage);
+        var _this_ = this;
+//        console.log("adding node");
+//        console.log(stage);
         let o = {
             id: this.idCounter,
             type: STAGE_TYPES.UNDEFINED_STAGE,
@@ -215,6 +265,15 @@ export class CreateProjectPage {
 
         for (let po of o.plugin.outputs == undefined ? [] : o.plugin.outputs) {
             connectorOut = node.output(po.id, po.name);
+            connectorOut.beforeRemove = function(index) {
+//                console.log(this);
+
+                _this_.updateConnections(this.node);
+            }
+            connectorOut.onConnect = function(input) {
+//                input.node.plugin.schema = Commons.clone(o.plugin.schema);
+                //                console.log(input);
+            }
         }
 
         //add the connections to connections array
@@ -224,19 +283,25 @@ export class CreateProjectPage {
             out: connectorOut
         });
 
+        //also push the schema to global schema properties suggetion list
+        if(o.plugin.schema!=undefined && o.plugin.schema.length>0)
+        _this_.suggestSchemaPropList.push({ stage: o.name, values: o.plugin.schema});
+
+
 
 
         //event handlers
         this.attachEvents(o, node);
 
-        console.log(node);
-        console.log("Created new node with options : " + o);
+//        console.log(node);
+        console.log("Created new node : " + o.name);
         return node;
     }
 
     private addObjectToTopology(obj) {
         var _this_ = this;
         _this_.topologyCanvas.push(obj);
+//        console.log(_this_.topologyCanvas);
     }
 
     private removeObjectFromTopology(obj) {
@@ -245,12 +310,73 @@ export class CreateProjectPage {
             let stage = _this_.topologyCanvas[i];
 
             if (stage.id == obj.id) {
-                console.log(stage.id + " / " + obj.id);
+//                console.log(stage.id + " / " + obj.id);
                 _this_.topologyCanvas.splice(i, 1);
                 break;
             }
         }
     }
+
+    public setSchema(node) {
+        if (node == undefined) return;
+
+
+    }
+
+    /*
+     * Updates the connection endpoints related to this node/obj
+     */
+    private updateConnections(s) {
+        //find all the outgoing connections
+        if (s.hasOwnProperty("pathsOut")) {
+            let p = Object.keys(s.pathsOut)[0];
+
+            if (s.pathsOut[p].length <= 0) return;
+
+            for (var ii = 0; ii < s.pathsOut[p].length; ii++) {
+                var to = {
+                    id: s.pathsOut[p][ii][2]["id"],
+                    name: s.pathsOut[p][ii][2]["name"],
+                    node: {
+                        id: s.pathsOut[p][ii][2]["node"]["id"],
+                        name: s.pathsOut[p][ii][2]["node"]["name"],
+                    }
+                }
+                //search for to-endpoint id in all stages
+                let found = false;
+                let n = {};
+//                console.log(to);
+                if (to.node.id != undefined && to.node.id != "" && to.node.id != null) {
+                    for (let ss of this.topologyCanvas) {
+                        if (ss.id == to.node.id) {
+                            found = true;
+                            n = ss;
+                            break;
+                        }
+                    }
+                    if (found) {
+//                        console.log("found");
+//                        console.log(ss);
+                        //remove the schema
+//                        ss.plugin.schema = [];
+                        ss.pathsIn[Object.keys(ss.pathsIn)[0]] = [];
+                        //                    var arr = ss.pathsIn[Object.keys(ss.pathsIn)[0]];
+
+                    }
+                } else {
+                    console.log("no connection found!");
+                }
+            }
+
+        }
+    }
+
+    /*
+     * get type of stage from string
+     */
+    public getStageType(val) {
+        if (val)
+     }
 
 
     /*
@@ -273,6 +399,8 @@ export class CreateProjectPage {
 
         // remove event
         node.onRemove = function() {
+            _this_.updateConnections(this);
+//            console.log(_this_.topologyCanvas);
             _this_.removeObjectFromTopology(this);
         }
     }
@@ -304,26 +432,27 @@ export class CreateProjectPage {
     public showProperties(node) {
         let _this_ = this;
         _this_.selectedNode = node;
-        console.log(_this_.selectedNode);
+//        console.log(_this_.selectedNode);
         $("#propertiesEditor").modal("show");
+        _this_.suggestSchemaArgs = [];
     }
 
 
     public stripUnwantedNodeProperties() {
-        
+
         let stages = [];
         for (let s of this.topologyCanvas) {
             var ns = {
-                pathsIn:{},
-                pathsOut:{},
-                inputs:[],
-                outputs:[]
-                };
+                pathsIn: {},
+                pathsOut: {},
+                inputs: [],
+                outputs: []
+            };
             for (let prop of this.relevantNodeProps) {
                 ns[prop] = s[prop];
             }
             if (s.hasOwnProperty("pathsIn")) {
-                ns.pathsIn={p:{}};
+                ns.pathsIn = { p: {} };
                 for (let p of Object.keys(s.pathsIn)) {
                     if (s.pathsIn[p].length <= 0) break;
                     var from = {
@@ -342,7 +471,7 @@ export class CreateProjectPage {
                             name: s.pathsIn[p][0][2]["node"]["name"],
                         }
                     }
-                   ns.pathsIn[p] = { from: from, to: to };
+                    ns.pathsIn[p] = { from: from, to: to };
 
 
                 }
@@ -350,33 +479,38 @@ export class CreateProjectPage {
             if (s.hasOwnProperty("pathsOut")) {
                 for (let p of Object.keys(s.pathsOut)) {
                     if (s.pathsOut[p].length <= 0) break;
-                    var from = {
-                        id: s.pathsOut[p][0][1]["id"],
-                        name: s.pathsOut[p][0][1]["name"],
-                        node: {
-                            id: s.pathsOut[p][0][1]["node"]["id"],
-                            name: s.pathsOut[p][0][1]["node"]["name"],
+//                    console.log(s.pathsOut[p]);
+                    ns.pathsOut[p] = [];
+                    for (var nsi = 0; nsi < s.pathsOut[p].length; nsi++) {
+//                        console.log(s.pathsOut[p][nsi]);
+                        var from = {
+                            id: s.pathsOut[p][nsi][1]["id"],
+                            name: s.pathsOut[p][nsi][1]["name"],
+                            node: {
+                                id: s.pathsOut[p][nsi][1]["node"]["id"],
+                                name: s.pathsOut[p][nsi][1]["node"]["name"],
+                            }
                         }
-                    }
-                    var to = {
-                        id: s.pathsOut[p][0][2]["id"],
-                        name: s.pathsOut[p][0][2]["name"],
-                        node: {
-                            id: s.pathsOut[p][0][2]["node"]["id"],
-                            name: s.pathsOut[p][0][2]["node"]["name"],
+                        var to = {
+                            id: s.pathsOut[p][nsi][2]["id"],
+                            name: s.pathsOut[p][nsi][2]["name"],
+                            node: {
+                                id: s.pathsOut[p][nsi][2]["node"]["id"],
+                                name: s.pathsOut[p][nsi][2]["node"]["name"],
+                            }
                         }
-                    }
-                    ns.pathsOut[p] = { from: from, to: to };
 
+                        ns.pathsOut[p].push({ from: from, to: to });
+                    }
 
                 }
             }
 
             if (s.hasOwnProperty("outputs")) {
-                ns.outputs=[];
+                ns.outputs = [];
                 for (var j = 0; j < s.outputs.length; j++) {
                     var o = s.outputs[j];
-                    
+
                     ns.outputs[j] = {
                         id: o.id,
                         name: o.name,
@@ -388,7 +522,7 @@ export class CreateProjectPage {
                 }
             }
             if (s.hasOwnProperty("inputs")) {
-                ns.inputs=[];
+                ns.inputs = [];
                 for (var j = 0; j < s.inputs.length; j++) {
                     var o = s.inputs[j];
                     s.inputs[j] = {
@@ -406,7 +540,7 @@ export class CreateProjectPage {
 
         //cyclic structure fix
         //for key pathsIn
-        
+
         return stages;
     }
 
@@ -424,28 +558,34 @@ export class CreateProjectPage {
         //one done, make the connections
         for (var i = 0; i < topology.stages.length; i++) {
             var s = topology.stages[i];
-            var outs = s.pathsOut;
-            var conn1,conn2;
-            for (let k of Object.keys(outs)) {
-                var path = outs[k];
-                console.log(path);
-                if(path.length<=0) continue;
+            var outs = s.pathsOut[Object.keys(s.pathsOut)[0]];
+//            console.log(outs);
+            var conn1, conn2;
+            if (outs == undefined) continue;
+            for (let path of outs) {
+
+//                console.log(path);
+                //if (path.length <= 0) continue;
+
                 for (var j = 0; j < this.connections.length; j++) {
                     var con = this.connections[j];
-                    if(path.from.node.id==con.id) {
+                    if (path.from.node.id == con.id) {
                         conn1 = con.out;
                     }
-                    if(path.to.node.id==con.id) {
+                    if (path.to.node.id == con.id) {
                         conn2 = con.in;
                     }
                 }
+
+//                console.log("Connecting : ");
+                if (conn1 == undefined || conn2 == undefined) continue;
+//                console.log(conn1);
+//                console.log(conn2);
+//                conn2.node.plugin.schema = Commons.clone(conn1.node.plugin.schema);
+                conn1.connect(conn2);
+
             }
-            console.log("Connecting : ");
-            if(conn1==undefined || conn2==undefined) continue;
-//            console.log(conn1.name);
-//            console.log(conn2.name);
-            
-            conn1.connect(conn2);
+
 
         }
     }
@@ -469,7 +609,7 @@ export class CreateProjectPage {
         //get the project json
         this.http.post('/api/projects/json', { name: this.projectName }, this.headers).map(response => response.json())
             .subscribe(p => {
-                console.log(p);
+//                console.log(p);
                 this.topology = p;
                 this.topology.name = this.projectName;
                 this.preloadProject = true;

@@ -19,28 +19,28 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.sa.core.commons;
+package com.sa.core;
 
-import java.util.List;
+import java.io.Serializable;
+import java.util.HashMap;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.streaming.api.java.JavaDStream;
 
 /**
- * This class handles connections between the stages.
- * 
+ *
  * @author arunsharma
  */
-public final class ConnectionManager {
+public abstract class DatabaseStage extends BaseStage implements Serializable{
     
-    private static ConnectionManager instance = null;
-    private ConnectionManager() {
-        
+    public DatabaseStage(JavaSparkContext sc, StreamAnalyzer sa) {
+        super(sc, sa);
     }
     
-    public ConnectionManager getInstance() {
-        if(instance!=null) {
-            return instance;
-        }
-        return new ConnectionManager();
+    public DatabaseStage(JavaSparkContext sc, StreamAnalyzer sa, HashMap<String,Object> metadata) {
+        super(sc, sa, metadata);
     }
     
+    public abstract void fetch(JavaDStream input);
+    public abstract JavaDStream poll();
     
 }

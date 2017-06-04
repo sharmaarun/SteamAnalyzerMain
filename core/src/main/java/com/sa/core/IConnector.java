@@ -32,13 +32,4 @@ import org.apache.spark.streaming.api.java.JavaDStream;
  */
 public interface IConnector {
     
-    /**
-     * Should be implemented to poll data from the data provider [eg. twitter]
-     */
-    void fetch();
-    /**
-     * Should be implemented to let the next stage poll the data from this stage.
-     */
-    JavaDStream<String> poll();
-    
 }

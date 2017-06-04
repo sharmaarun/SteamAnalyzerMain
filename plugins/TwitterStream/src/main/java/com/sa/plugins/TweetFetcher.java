@@ -22,7 +22,9 @@
 package com.sa.plugins;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.spark.api.java.JavaRDD;
@@ -54,28 +56,24 @@ public class TweetFetcher implements Serializable {
         System.setProperty("twitter4j.oauth.consumerSecret", cs);
         System.setProperty("twitter4j.oauth.accessToken", at);
         System.setProperty("twitter4j.oauth.accessTokenSecret", ats);
+        
         output = iStream.map(new Function<Status, String>() {
             public String call(Status status) {
-                return status.getText();
+                String id = status.getId()+"";
+                String userName = status.getUser()==null?"":status.getUser().getName();
+                String createdAt = status.getCreatedAt()==null?"":status.getCreatedAt().toString();
+                String geoLocation = status.getGeoLocation()==null?"":status.getGeoLocation().toString();
+                String text = status.getText()==null?"":status.getText();
+                text = text.replaceAll("[\\\n\\\"\\\t\\\r]","");
+                text = text.replaceAll("\\\\","");
+                return "{\"id\":\""+id+"\","
+                        + "\"text\":\""+text+"\","
+                        + "\"createdAt\":\""+createdAt+"\","
+                        + "\"geoLocation\":\""+geoLocation+"\"}"+"\","
+                        + "\"userName\":\""+userName+"\"}";
             }
         });
         return output;
-        //save each bunch into the specified buffer
-        //TODO: move to other function
-//        statuses.foreachRDD(new VoidFunction<JavaRDD<String>>() {
-//            String cpPath = tsp.getCheckpointPath();
-//
-//            @Override
-//            public void call(JavaRDD<String> t1) {
-//
-//                try {
-//                    t1.coalesce(1).saveAsTextFile(cpPath + "/rdd" + t1.id());
-//                } catch (Exception ex) {
-//                    ex.printStackTrace(System.out);
-//                }
-//                return;
-//            }
-//        });
     }
 
 }

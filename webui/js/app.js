@@ -260,6 +260,12 @@ var Commons = (function () {
     Commons.clone = function (obj) {
         return $.extend(true, {}, obj);
     };
+    Commons.getEnumFromString = function (enu, str) {
+        if (enu.hasOwnProperty(str))
+            return enu[str];
+        else
+            return 0;
+    };
     Commons.loaderTimer = -1;
     Commons = __decorate([
         core_1.Injectable(), 
@@ -316,6 +322,31 @@ var FilterPipe = (function () {
     return FilterPipe;
 }());
 exports.FilterPipe = FilterPipe;
+var FilterPluginsPipe = (function () {
+    function FilterPluginsPipe() {
+    }
+    FilterPluginsPipe.prototype.transform = function (items, args) {
+        if (!items)
+            return [];
+        if (args == "" || args == undefined || args == null)
+            return items;
+        return items.filter(function (it) { if (args == "" || args == undefined || args == null) {
+            return true;
+        }
+        else {
+            return it.name == undefined ? false : it.name.indexOf(args) !== -1;
+        } });
+    };
+    FilterPluginsPipe = __decorate([
+        core_1.Pipe({
+            name: 'filterPlugins'
+        }),
+        core_1.Injectable(), 
+        __metadata('design:paramtypes', [])
+    ], FilterPluginsPipe);
+    return FilterPluginsPipe;
+}());
+exports.FilterPluginsPipe = FilterPluginsPipe;
 var FilterPropsPipe = (function () {
     function FilterPropsPipe() {
     }
@@ -350,6 +381,29 @@ exports.FilterPropsPipe = FilterPropsPipe;
     STAGE_TYPES[STAGE_TYPES["REPORT_STAGE"] = 4] = "REPORT_STAGE";
 })(exports.STAGE_TYPES || (exports.STAGE_TYPES = {}));
 var STAGE_TYPES = exports.STAGE_TYPES;
+var mouseDown = false, mouseUp = true;
+//initialize mouse capture
+document.body.onmousedown = function () {
+    mouseDown = true;
+    mouseUp = false;
+};
+document.body.onmouseup = function () {
+    mouseDown = false;
+    mouseUp = true;
+};
+//mouse class
+var MouseManager = (function () {
+    function MouseManager() {
+    }
+    MouseManager.isMouseDown = function () {
+        return mouseDown;
+    };
+    MouseManager.isMouseUp = function () {
+        return mouseUp;
+    };
+    return MouseManager;
+}());
+exports.MouseManager = MouseManager;
 //# sourceMappingURL=commons.component.js.map;
 /*
  * Copyright 2016 arunsharma.
@@ -850,9 +904,20 @@ var CreateProjectPage = (function () {
         //objects
         this.plugins = [];
         this.topology = { name: 'project-' + commons_component_1.Commons.getUUID(), displayName: "", stages: [], connections: [] };
-        this.idCounter = 1;
+        this.topologyCanvas = [];
+        this.relevantNodeProps = [
+            "id",
+            "name",
+            "plugin",
+            "type",
+            "x",
+            "y"
+        ];
+        this.idCounter = 0;
         this.conIdCounter = 0;
         this.connections = [];
+        this.suggestSchemaPropList = [];
+        this.suggestSchemaArgs = [];
         //event flags
         this.dragMode = false;
         this.dragging = false;
@@ -868,6 +933,12 @@ var CreateProjectPage = (function () {
         setTimeout(function () {
             _this_.saSetup();
             CreateProjectPage.__LOAD_ONCE_EDITOR = false;
+            $("#componentsBox .divider").mousedown(function (e) {
+                _this_.startResize(e);
+            });
+            $("#componentsBox .divider").mouseup(function (e) {
+                $("body").off('mousemove');
+            });
         }, 1000);
     }
     CreateProjectPage.prototype.ngOnInit = function () {
@@ -886,19 +957,53 @@ var CreateProjectPage = (function () {
     };
     CreateProjectPage.prototype.saInit = function () {
     };
+    CreateProjectPage.prototype.startResize = function (e) {
+        //text selection fix
+        if (document.selection) {
+            document.selection.empty();
+        }
+        else if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        }
+        $("body").mousemove(function (ev) {
+            var l = parseInt($("body").width()) - ev.pageX - 3;
+            $("#componentsBox").css("right", l + "px");
+            var r = parseInt(ev.pageX + 3);
+            $("#drawBox").css("left", r + "px");
+        });
+    };
     CreateProjectPage.prototype.showStage = function () {
-        console.log(this.stage);
+        //        console.log(this.stage);
     };
     CreateProjectPage.prototype.saSetup = function () {
-        if (!CreateProjectPage.__LOAD_ONCE_EDITOR)
-            return false;
+        //if (!CreateProjectPage.__LOAD_ONCE_EDITOR) return false;
         var w = $("#drawBox").width();
-        var h = $("#draw        Box").height();
+        var h = $("#drawBox").height();
         // adding new canvas node editor - linker js
         this.saLinker = $("#drawBox").linker();
         //load the project
-        if (this.preloadProject)
+        if (this.preloadProject) {
             this.reload();
+        }
+    };
+    CreateProjectPage.prototype.suggestSchemaProps = function (val) {
+        var _this_ = this;
+        if (val == undefined)
+            return;
+        val = val.split(",")[val.split(",").length - 1].trim();
+        var args = commons_component_1.Commons.clone(_this_.suggestSchemaPropList);
+        var tmpArr = [];
+        for (var _i = 0, _a = Object.keys(args); _i < _a.length; _i++) {
+            var a = _a[_i];
+            var arr = args[a].values == undefined ? [] : args[a].values;
+            for (var _b = 0, arr_1 = arr; _b < arr_1.length; _b++) {
+                var it_1 = arr_1[_b];
+                if (it_1.indexOf(val) !== -1) {
+                    tmpArr.push({ from: args[a].stage, value: it_1 });
+                }
+            }
+        }
+        _this_.suggestSchemaArgs = tmpArr;
     };
     CreateProjectPage.prototype.zoom = function (steps) {
         if (steps > 10)
@@ -921,16 +1026,27 @@ var CreateProjectPage = (function () {
     //Adds plugin as component to the canvas area
     CreateProjectPage.prototype.addObject = function (plug) {
         var plugin = commons_component_1.Commons.clone(plug);
-        console.log(plugin);
-        //1. create linkerjs node object
-        var n = this.createNode({ plugin: plugin, name: plugin.name, type: commons_component_1.STAGE_TYPES.STREAM_STAGE, x: 150 });
-        //2. attach plugin to the node as a property
-        //3. set properties
+        //        console.log(plugin);
+        //increment the id counter
+        this.idCounter += 1;
+        //1. create node object
+        var n = this.addStage({ plugin: plugin, name: plugin.name, type: commons_component_1.Commons.getEnumFromString(commons_component_1.STAGE_TYPES, plugin.type), x: 150 });
+        //2. add node object to topology
+        //        this.addObjectToTopology(n);
+    };
+    CreateProjectPage.prototype.addStage = function (stage) {
+        //1. create linkerjs node 
+        var n = this.createNode(stage);
+        this.addObjectToTopology(n);
+        return n;
     };
     //create linkerjs node based on
     //options :
     //{type, x location, y location}
-    CreateProjectPage.prototype.createNode = function (options) {
+    CreateProjectPage.prototype.createNode = function (stage) {
+        var _this_ = this;
+        //        console.log("adding node");
+        //        console.log(stage);
         var o = {
             id: this.idCounter,
             type: commons_component_1.STAGE_TYPES.UNDEFINED_STAGE,
@@ -939,7 +1055,7 @@ var CreateProjectPage = (function () {
             y: $(".linker_container").scrollTop() + parseInt(Math.random() * 100)
         };
         var node = {};
-        o = commons_component_1.Commons.extend(o, options);
+        o = commons_component_1.Commons.extend(o, stage);
         //validate the params
         if (!this.validateNode(o)) {
             console.log("Validation failed for new node");
@@ -957,18 +1073,101 @@ var CreateProjectPage = (function () {
         for (var _b = 0, _c = o.plugin.outputs == undefined ? [] : o.plugin.outputs; _b < _c.length; _b++) {
             var po = _c[_b];
             connectorOut = node.output(po.id, po.name);
+            connectorOut.beforeRemove = function (index) {
+                //                console.log(this);
+                _this_.updateConnections(this.node);
+            };
+            connectorOut.onConnect = function (input) {
+                //                input.node.plugin.schema = Commons.clone(o.plugin.schema);
+                //                console.log(input);
+            };
         }
-        //update the idCounter to the maximum value
-        this.updateIdCounter();
+        //add the connections to connections array
+        this.connections.push({
+            id: node.id,
+            in: connectorIn,
+            out: connectorOut
+        });
+        //also push the schema to global schema properties suggetion list
+        if (o.plugin.schema != undefined && o.plugin.schema.length > 0)
+            _this_.suggestSchemaPropList.push({ stage: o.name, values: o.plugin.schema });
         //event handlers
         this.attachEvents(o, node);
-        console.log(node);
-        console.log("Created new node with options : " + o);
+        //        console.log(node);
+        console.log("Created new node : " + o.name);
         return node;
     };
     CreateProjectPage.prototype.addObjectToTopology = function (obj) {
         var _this_ = this;
-        _this_.topology.stages.push(obj);
+        _this_.topologyCanvas.push(obj);
+        //        console.log(_this_.topologyCanvas);
+    };
+    CreateProjectPage.prototype.removeObjectFromTopology = function (obj) {
+        var _this_ = this;
+        for (var i = 0; i < _this_.topologyCanvas.length; i++) {
+            var stage = _this_.topologyCanvas[i];
+            if (stage.id == obj.id) {
+                //                console.log(stage.id + " / " + obj.id);
+                _this_.topologyCanvas.splice(i, 1);
+                break;
+            }
+        }
+    };
+    CreateProjectPage.prototype.setSchema = function (node) {
+        if (node == undefined)
+            return;
+    };
+    /*
+     * Updates the connection endpoints related to this node/obj
+     */
+    CreateProjectPage.prototype.updateConnections = function (s) {
+        //find all the outgoing connections
+        if (s.hasOwnProperty("pathsOut")) {
+            var p = Object.keys(s.pathsOut)[0];
+            if (s.pathsOut[p].length <= 0)
+                return;
+            for (var ii = 0; ii < s.pathsOut[p].length; ii++) {
+                var to = {
+                    id: s.pathsOut[p][ii][2]["id"],
+                    name: s.pathsOut[p][ii][2]["name"],
+                    node: {
+                        id: s.pathsOut[p][ii][2]["node"]["id"],
+                        name: s.pathsOut[p][ii][2]["node"]["name"],
+                    }
+                };
+                //search for to-endpoint id in all stages
+                var found = false;
+                var n = {};
+                //                console.log(to);
+                if (to.node.id != undefined && to.node.id != "" && to.node.id != null) {
+                    for (var _i = 0, _a = this.topologyCanvas; _i < _a.length; _i++) {
+                        var ss = _a[_i];
+                        if (ss.id == to.node.id) {
+                            found = true;
+                            n = ss;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        //                        console.log("found");
+                        //                        console.log(ss);
+                        //remove the schema
+                        //                        ss.plugin.schema = [];
+                        ss.pathsIn[Object.keys(ss.pathsIn)[0]] = [];
+                    }
+                }
+                else {
+                    console.log("no connection found!");
+                }
+            }
+        }
+    };
+    /*
+     * get type of stage from string
+     */
+    CreateProjectPage.prototype.getStageType = function (val) {
+        if (val)
+            ;
     };
     /*
      *Attach events to nodes
@@ -978,10 +1177,18 @@ var CreateProjectPage = (function () {
         var _this_ = this;
         //drag event
         node.onDrag = function (x, y) {
+            this.x = x;
+            this.y = y;
         };
         //settings event
         node.onSetting = function () {
             _this_.showProperties(this);
+        };
+        // remove event
+        node.onRemove = function () {
+            _this_.updateConnections(this);
+            //            console.log(_this_.topologyCanvas);
+            _this_.removeObjectFromTopology(this);
         };
     };
     CreateProjectPage.prototype.updateIdCounter = function () {
@@ -1004,31 +1211,173 @@ var CreateProjectPage = (function () {
     CreateProjectPage.prototype.showProperties = function (node) {
         var _this_ = this;
         _this_.selectedNode = node;
-        console.log(_this_.selectedNode);
+        //        console.log(_this_.selectedNode);
         $("#propertiesEditor").modal("show");
+        _this_.suggestSchemaArgs = [];
+    };
+    CreateProjectPage.prototype.stripUnwantedNodeProperties = function () {
+        var stages = [];
+        for (var _i = 0, _a = this.topologyCanvas; _i < _a.length; _i++) {
+            var s = _a[_i];
+            var ns = {
+                pathsIn: {},
+                pathsOut: {},
+                inputs: [],
+                outputs: []
+            };
+            for (var _b = 0, _c = this.relevantNodeProps; _b < _c.length; _b++) {
+                var prop = _c[_b];
+                ns[prop] = s[prop];
+            }
+            if (s.hasOwnProperty("pathsIn")) {
+                ns.pathsIn = { p: {} };
+                for (var _d = 0, _e = Object.keys(s.pathsIn); _d < _e.length; _d++) {
+                    var p = _e[_d];
+                    if (s.pathsIn[p].length <= 0)
+                        break;
+                    var from = {
+                        id: s.pathsIn[p][0][1]["id"],
+                        name: s.pathsIn[p][0][1]["name"],
+                        node: {
+                            id: s.pathsIn[p][0][1]["node"]["id"],
+                            name: s.pathsIn[p][0][1]["node"]["name"],
+                        }
+                    };
+                    var to = {
+                        id: s.pathsIn[p][0][2]["id"],
+                        name: s.pathsIn[p][0][2]["name"],
+                        node: {
+                            id: s.pathsIn[p][0][2]["node"]["id"],
+                            name: s.pathsIn[p][0][2]["node"]["name"],
+                        }
+                    };
+                    ns.pathsIn[p] = { from: from, to: to };
+                }
+            }
+            if (s.hasOwnProperty("pathsOut")) {
+                for (var _f = 0, _g = Object.keys(s.pathsOut); _f < _g.length; _f++) {
+                    var p = _g[_f];
+                    if (s.pathsOut[p].length <= 0)
+                        break;
+                    //                    console.log(s.pathsOut[p]);
+                    ns.pathsOut[p] = [];
+                    for (var nsi = 0; nsi < s.pathsOut[p].length; nsi++) {
+                        //                        console.log(s.pathsOut[p][nsi]);
+                        var from = {
+                            id: s.pathsOut[p][nsi][1]["id"],
+                            name: s.pathsOut[p][nsi][1]["name"],
+                            node: {
+                                id: s.pathsOut[p][nsi][1]["node"]["id"],
+                                name: s.pathsOut[p][nsi][1]["node"]["name"],
+                            }
+                        };
+                        var to = {
+                            id: s.pathsOut[p][nsi][2]["id"],
+                            name: s.pathsOut[p][nsi][2]["name"],
+                            node: {
+                                id: s.pathsOut[p][nsi][2]["node"]["id"],
+                                name: s.pathsOut[p][nsi][2]["node"]["name"],
+                            }
+                        };
+                        ns.pathsOut[p].push({ from: from, to: to });
+                    }
+                }
+            }
+            if (s.hasOwnProperty("outputs")) {
+                ns.outputs = [];
+                for (var j = 0; j < s.outputs.length; j++) {
+                    var o = s.outputs[j];
+                    ns.outputs[j] = {
+                        id: o.id,
+                        name: o.name,
+                        node: {
+                            id: o.node.id,
+                            name: o.node.name
+                        }
+                    };
+                }
+            }
+            if (s.hasOwnProperty("inputs")) {
+                ns.inputs = [];
+                for (var j = 0; j < s.inputs.length; j++) {
+                    var o = s.inputs[j];
+                    s.inputs[j] = {
+                        id: o.id,
+                        name: o.name,
+                        node: {
+                            id: o.node.id,
+                            name: o.node.name
+                        }
+                    };
+                }
+            }
+            stages.push(ns);
+        }
+        //cyclic structure fix
+        //for key pathsIn
+        return stages;
+    };
+    CreateProjectPage.prototype.preloadStages = function (topology) {
+        //load all stages
+        for (var i = 0; i < topology.stages.length; i++) {
+            var s = topology.stages[i];
+            this.addStage(s);
+            //also update the idCounter to larget value
+            if (s.id > this.idCounter) {
+                this.idCounter = s.id;
+            }
+        }
+        //one done, make the connections
+        for (var i = 0; i < topology.stages.length; i++) {
+            var s = topology.stages[i];
+            var outs = s.pathsOut[Object.keys(s.pathsOut)[0]];
+            //            console.log(outs);
+            var conn1, conn2;
+            if (outs == undefined)
+                continue;
+            for (var _i = 0, outs_1 = outs; _i < outs_1.length; _i++) {
+                var path = outs_1[_i];
+                //                console.log(path);
+                //if (path.length <= 0) continue;
+                for (var j = 0; j < this.connections.length; j++) {
+                    var con = this.connections[j];
+                    if (path.from.node.id == con.id) {
+                        conn1 = con.out;
+                    }
+                    if (path.to.node.id == con.id) {
+                        conn2 = con.in;
+                    }
+                }
+                //                console.log("Connecting : ");
+                if (conn1 == undefined || conn2 == undefined)
+                    continue;
+                //                console.log(conn1);
+                //                console.log(conn2);
+                //                conn2.node.plugin.schema = Commons.clone(conn1.node.plugin.schema);
+                conn1.connect(conn2);
+            }
+        }
     };
     CreateProjectPage.prototype.save = function () {
-        //        Commons.loaderShow();
-        //        this.topology.connections = this.connections.points;
-        //fill up fixed props
-        // remove all the unwanted properties before save
-        //this.trimTopology(this.topology);
-        console.log(this.topology);
-        //        this.http.post('api/projects/save', { project: this.topology }, this.headers).map(response => response.json())
-        //            .subscribe(d => {
-        //                console.log(d);
-        //                Commons.loaderDone();
-        //            }, e => { console.log(e); }, s => { console.log(s); });
+        commons_component_1.Commons.loaderShow();
+        //first strip unwanted data from topology
+        var tmp = commons_component_1.Commons.clone(this.topology);
+        tmp.stages = this.stripUnwantedNodeProperties();
+        this.http.post('api/projects/save', { project: tmp }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (d) {
+            commons_component_1.Commons.loaderDone();
+        }, function (e) { console.log(e); }, function (s) { console.log(s); });
     };
     CreateProjectPage.prototype.reload = function () {
         var _this = this;
         //get the project json
         this.http.post('/api/projects/json', { name: this.projectName }, this.headers).map(function (response) { return response.json(); })
             .subscribe(function (p) {
-            console.log(p);
+            //                console.log(p);
             _this.topology = p;
             _this.topology.name = _this.projectName;
             _this.preloadProject = true;
+            _this.preloadStages(p);
             //this.connections.points = this.topology.connections;
             _this.preloadProject = false;
         }, function (e) { console.log(e); }, function (s) { console.log(s); });
@@ -1085,7 +1434,8 @@ var CreateProjectPage = (function () {
     CreateProjectPage = __decorate([
         core_1.Component({
             templateUrl: 'app/project/create-project.component.html',
-            providers: [http_1.HTTP_PROVIDERS]
+            providers: [http_1.HTTP_PROVIDERS],
+            pipes: [commons_component_1.FilterPluginsPipe]
         }), 
         __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute])
     ], CreateProjectPage);
@@ -1194,9 +1544,9 @@ var ReportPage = (function () {
         this.loadedCharts = false;
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this.lineChartData = [
-            { data: [0], label: 'Main Project' }
+            { data: [0], label: '' }
         ];
-        this.lineChartLabels = ['0'];
+        this.lineChartLabels = [''];
         this.lineChartOptions = {
             animation: false,
             responsive: true
@@ -1211,16 +1561,16 @@ var ReportPage = (function () {
                 pointHoverBorderColor: 'rgba(148,159,177,0.8)'
             },
             {
-                backgroundColor: 'rgba(77,83,96,0.2)',
-                borderColor: 'rgba(77,83,96,1)',
+                backgroundColor: 'rgba(0,0,255,0.2)',
+                borderColor: 'rgba(0,0,255,1)',
                 pointBackgroundColor: 'rgba(77,83,96,1)',
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
                 pointHoverBorderColor: 'rgba(77,83,96,1)'
             },
             {
-                backgroundColor: 'rgba(148,159,177,0.2)',
-                borderColor: 'rgba(148,159,177,1)',
+                backgroundColor: 'rgba(255,0,0,0.2)',
+                borderColor: 'rgba(255,0,0,1)',
                 pointBackgroundColor: 'rgba(148,159,177,1)',
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
@@ -1228,10 +1578,14 @@ var ReportPage = (function () {
             }
         ];
         this.lineChartType = "line";
-        this.oldCount = 0;
-        this.lcc = 0;
-        this.runOnce = true;
+        this.oldCount = { default: 0 };
+        this.lcc = [0];
+        this.runOnce = { default: true };
         var _this_ = this;
+        if (this.projectName == undefined) {
+            var uri = window.location.href.split["/"];
+            this.projectName = uri[uri.length - 1];
+        }
         //load the plugins
         setTimeout(function () {
             _this_.charts.forEach(function (cc) {
@@ -1255,33 +1609,56 @@ var ReportPage = (function () {
     ReportPage.prototype.getUpdates = function () {
         //fetch projects 
         var _this_ = this;
-        var nc = 0;
-        this.http.get('/api/reports', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
-            d = JSON.parse(d);
-            console.log(d);
-            if (_this_.runOnce) {
-                _this_.oldCount = d.data.count;
-                _this_.runOnce = false;
-            }
-            else {
-                if (_this_.oldCount != d.data.count) {
-                    nc = d.data.count - _this_.oldCount;
+        console.log(_this_.projectName);
+        this.http.post('/api/reports', { project: _this_.projectName }, this.headers).map(function (res) { return res.json(); }).subscribe(function (dd) {
+            if (dd != undefined && dd.length > 0) {
+                //add one chartline per report
+                if (_this_.lineChartData.length != dd.length) {
+                    //mismatch found add more lines
+                    var diff = dd.length - _this_.lineChartData.length;
+                    console.log(diff);
+                    //                        
+                    for (var ii = 0; ii < diff; ii++) {
+                        _this_.lineChartData.push({ data: [0], label: '' });
+                        _this_.lineChartLabels.push("");
+                        var d = JSON.parse(dd[ii]);
+                        _this_.runOnce[d.report] = 0;
+                        _this_.oldCount[d.report] = true;
+                    }
+                    return;
                 }
-                else {
-                    nc = 0;
+                for (var i = 0; i < dd.length; i++) {
+                    var d = JSON.parse(dd[i]);
+                    console.log(d);
+                    _this_.updateChartsData(i, d);
                 }
             }
-            _this_.appendVal(_this_.lineChartData[0].data, nc);
-            _this_.appendVal(_this_.lineChartLabels, d.data.date);
-            _this_.lineChartData[0].label = d.data.stream_label;
-            console.log(_this_.lineChartData);
-            _this_.oldCount = d.data.count;
-            console.log("nc : " + nc + " lcc: " + _this_.lcc + "count : " + d.data.count);
         }, function (e) {
             console.log("Cound not fetch projects list!");
         }, function (s) {
             console.log("Fetched Projects!");
         });
+    };
+    ReportPage.prototype.updateChartsData = function (i, d) {
+        var nc = 0;
+        var _this_ = this;
+        if (_this_.runOnce[d.report]) {
+            _this_.oldCount[d.report] = d.data.count;
+            _this_.runOnce[d.report] = false;
+        }
+        else {
+            if (_this_.oldCount[d.report] != d.data.count) {
+                nc = d.data.count - _this_.oldCount[d.report];
+            }
+            else {
+                nc = 0;
+            }
+        }
+        _this_.appendVal(_this_.lineChartData[i].data, nc);
+        if (i == 0)
+            _this_.appendVal(_this_.lineChartLabels, d.data.date);
+        _this_.lineChartData[i].label = d.data.stream_label;
+        _this_.oldCount[i] = d.data.count;
     };
     ReportPage.prototype.updateFunction = function () {
         var _this_ = this;

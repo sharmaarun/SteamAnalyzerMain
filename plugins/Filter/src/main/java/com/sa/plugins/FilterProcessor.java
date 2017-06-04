@@ -21,10 +21,11 @@
  */
 package com.sa.plugins;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.util.Map;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.streaming.api.java.JavaDStream;
 
@@ -34,37 +35,62 @@ import org.apache.spark.streaming.api.java.JavaDStream;
  */
 public class FilterProcessor implements Serializable {
 
-    
-    
-    
     public FilterProcessor() {
-        
+
     }
-    
-    
-    public static JavaDStream<String> process(Map<String,String> fields, JavaDStream<String> input, JavaDStream<String> output) {
-        
+
+    /**
+     * filter out the stream of data base on search item fields from the UI
+     *
+     * @param fields
+     * @param input
+     * @param output
+     * @return
+     */
+    public static JavaDStream<String> process(Map<String, String> fields, JavaDStream<String> input, JavaDStream<String> output) {
+
         String items = fields.get("items");
-        String[] itemsArr = items.length()>0?items.split(","):null;
+        String args = fields.get("args");
+        String[] itemsArr = items.length() > 0 ? items.split(",") : null;
+        String[] argsArr = args.length() > 0 ? args.split(",") : null;
+        System.out.println("Searching for " + items + " in " + args);
+
         output = input.filter(new Function<String, Boolean>() {
             @Override
             public Boolean call(String t1) throws Exception {
-                if(itemsArr==null || itemsArr.length<=0) {
-                    return true;
-                }
-                boolean found = false;
-                for(String i : itemsArr) {
-                    if(t1.contains(i.toLowerCase())) {
-                        found = true;
-                        break;
+                    System.out.println(t1);
+                    if (itemsArr == null || itemsArr.length <= 0) {
+                        return true;
+                    }
+                    boolean found = false;
+                    JsonNode node = null;
+                    if (argsArr != null) {
+                        node = new ObjectMapper().readTree(t1);
+                    }
+                    for (String i : itemsArr) {
+                        if (argsArr != null) {
+                            for (String arg : argsArr) {
+                                if (node.get(arg).asText().contains(i.toLowerCase())) {
+                                    found = true;
+                                    System.out.println("Match Found!");
+                                    break;
+                                }
+                            }
+                        } else if (t1.contains(i.toLowerCase())) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        return true;
+                    } else {
+                        return false;
                     }
                 }
-                return found;
-            }
-        });
-        
+            });
+
         return output;
-        
+
     }
-    
+
 }

@@ -12,9 +12,9 @@ import com.fasterxml.jackson.databind.JsonNode;
  *
  * @author arunsharma
  */
-public class StreamStage extends Stage {
+public class ProcessStage extends Stage {
 
-    public StreamStage() {
+    public ProcessStage() {
         
     }
 

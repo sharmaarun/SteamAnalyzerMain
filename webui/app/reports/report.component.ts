@@ -42,9 +42,9 @@ export class ReportPage {
     headers = new Headers({ 'Content-Type': 'application/json' });
 
     public lineChartData: Array<any> = [
-        { data: [0], label: 'Main Project' }
+        { data: [0], label: '' }
     ];
-    public lineChartLabels: Array<any> = ['0'];
+    public lineChartLabels: Array<any> = [''];
     public lineChartOptions: any = {
         animation: false,
         responsive: true
@@ -58,17 +58,17 @@ export class ReportPage {
             pointHoverBackgroundColor: '#fff',
             pointHoverBorderColor: 'rgba(148,159,177,0.8)'
         },
-        { // dark grey
-            backgroundColor: 'rgba(77,83,96,0.2)',
-            borderColor: 'rgba(77,83,96,1)',
+        { // blue
+            backgroundColor: 'rgba(0,0,255,0.2)',
+            borderColor: 'rgba(0,0,255,1)',
             pointBackgroundColor: 'rgba(77,83,96,1)',
             pointBorderColor: '#fff',
             pointHoverBackgroundColor: '#fff',
             pointHoverBorderColor: 'rgba(77,83,96,1)'
         },
-        { // grey
-            backgroundColor: 'rgba(148,159,177,0.2)',
-            borderColor: 'rgba(148,159,177,1)',
+        { // red
+            backgroundColor: 'rgba(255,0,0,0.2)',
+            borderColor: 'rgba(255,0,0,1)',
             pointBackgroundColor: 'rgba(148,159,177,1)',
             pointBorderColor: '#fff',
             pointHoverBackgroundColor: '#fff',
@@ -77,12 +77,16 @@ export class ReportPage {
     ];
 
     public lineChartType = "line";
-    public oldCount = 0;
-    public lcc = 0;
-    public runOnce = true;
-    public 
+    public oldCount = [0];
+    public lcc = [0];
+    public runOnce = [true];
+    public reportChartMap = {};
     public constructor(public http: Http, public route: ActivatedRoute) {
         var _this_ = this;
+        if (this.projectName == undefined) {
+            var uri = window.location.href.split["/"];
+            this.projectName = uri[uri.length - 1];
+        }
         //load the plugins
         setTimeout(function() {
             _this_.charts.forEach(function(cc) {
@@ -103,36 +107,71 @@ export class ReportPage {
     private getUpdates() {
         //fetch projects 
         var _this_ = this;
-        var nc = 0;
-        this.http.get('/api/reports', this.headers).map(res => res.json()).subscribe(
-            d => {
-                d = JSON.parse(d);
-                console.log(d);
-                if (_this_.runOnce) {
-                    _this_.oldCount = d.data.count;
-                    _this_.runOnce=false;
-                } else {
-                    if (_this_.oldCount != d.data.count) {
+        console.log(_this_.projectName);
+        this.http.post('/api/reports', { project: _this_.projectName }, this.headers).map(res => res.json()).subscribe(
+            dd => {
+                if (dd != undefined && dd.length > 0) {
+                    //add one chartline per report
 
-                        nc = d.data.count - _this_.oldCount;
-                    } else {
-                        nc = 0;
+                    if (_this_.lineChartData.length != dd.length) {
+                        //mismatch found add more lines
+
+                        for (var ii = 0; ii < dd.length; ii++) {
+                            if (ii > 0) _this_.lineChartData.push({ data: [0], label: '' });
+                            var d = JSON.parse(dd[ii]);
+                            _this_.reportChartMap[d.report] = ii;
+                            _this_.runOnce[ii] = true;
+                            _this_.oldCount[ii] = 0;
+                        }
+
+                    } else if(_this_.runOnce[0]){
+                        var d = JSON.parse(dd[0]);
+                        _this_.reportChartMap[d.report] = 0;
+                        _this_.runOnce[0] = true;
+                        _this_.oldCount[0] = 0;
+                    }
+
+                    for (var i = 0; i < dd.length; i++) {
+                        console.log(dd[i]);
+                        var d = JSON.parse(dd[i]);
+                        console.log(d);
+                        _this_.updateChartsData(_this_, d);
 
                     }
                 }
-
-                _this_.appendVal(_this_.lineChartData[0].data, nc);
-                _this_.appendVal(_this_.lineChartLabels, d.data.date);
-                _this_.lineChartData[0].label = d.data.stream_label;
-                console.log(_this_.lineChartData);
-                _this_.oldCount = d.data.count;
-                console.log("nc : " + nc + " lcc: " + _this_.lcc + "count : " + d.data.count);
             }, e => {
                 console.log("Cound not fetch projects list!");
             }, s => {
                 console.log("Fetched Projects!");
             }
         );
+    }
+
+    public updateChartsData(_this_, d) {
+        var _this_ = _this_;
+        var nc = 0;
+        var i = _this_.reportChartMap[d.report];
+        console.log("updating for : " + d.report + " [" + i + "]");
+        console.log(_this_.runOnce[i] + " and " + _this_.oldCount[i]);
+        if (_this_.runOnce[i]) {
+            console.log("running Once");
+            _this_.oldCount[i] = d.data.count;
+            _this_.runOnce[i] = false;
+        } else {
+            console.log("again ...");
+            if (_this_.oldCount[i] != d.data.count) {
+
+                nc = d.data.count - _this_.oldCount[i];
+            } else {
+                nc = 0;
+
+            }
+        }
+        console.log(nc);
+        _this_.appendVal(_this_.lineChartData[i].data, nc);
+        if (i == 0) _this_.appendVal(_this_.lineChartLabels, d.data.date);
+        _this_.lineChartData[i].label = d.data.stream_label;
+        _this_.oldCount[i] = d.data.count;
     }
 
     public updateFunction() {

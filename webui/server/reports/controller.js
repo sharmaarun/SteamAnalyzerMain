@@ -35,8 +35,45 @@ exports.getDataFromHDFS = function (req, res) {
 
 }
 
+
 exports.list = function (req, res) {
-    var file = hdfs.createReadStream("/user/hadoop/nullreport.json");
+    
+    var project = req.body.project;
+    if(project==undefined) {
+        res.status(400).send({status:"ERROR",msg:"Invalid project!"});
+    }
+    var topology = fs.readJSON(app.conf.projects.localPath+"/"+project+"/topology.json");
+    var totalReports = {};
+    for(var i=0;i<topology.stages.length;i++) {
+        var stg = topology.stages[i];
+        if(stg.plugin.type=="REPORT_STAGE") {
+            var repo = stg.name + "_" + stg.id;
+            totalReports[repo] = app.conf.projects.hdfs.path+"/"+project+"/"+stg.name+"_"+stg.id+"/report.json";
+        }
+    }
+    var rd = [];
+    readReports(totalReports,function(data){
+        return res.json(data);
+    });
+    
+//    setInterval(function () {
+//        if ((data != "" && data != undefined) || (status!="" && status!=undefined))
+//            
+//    }, 500);
+
+}
+
+
+var readReport = function(paths,count,arr,cb){
+    if(count>Object.keys(paths).length-1) {
+        console.log("return all data");
+        cb(arr);
+        return;
+    }
+    var keys = Object.keys(paths);
+    var currKey = keys[count];
+    var path = paths[currKey];
+    var file = hdfs.createReadStream(path+"");
     var data = "", error = {}, status = "OK";
     file.on('error', function onError(err) {
         // Do something with the error 
@@ -46,18 +83,21 @@ exports.list = function (req, res) {
 
     file.on('data', function onChunk(chunk) {
         // Do something with the data chunk 
-        data = chunk;
+        data += chunk;
     });
 
     file.on('finish', function onFinish() {
-        return res.json("{\"data\": "+data+", \"status\": \""+status+"\", \"error\": \"" + error + "\"}");
+        console.log("got the data for "+count+"--" + path);
+        arr.push("{\"report\":\""+currKey+"\",\"data\": "+data+", \"status\": \""+status+"\", \"error\": \"" + error + "\"}");
+        readReport(paths,count+1,arr,cb);
         // Upload is done 
     });
-//    setInterval(function () {
-//        if ((data != "" && data != undefined) || (status!="" && status!=undefined))
-//            
-//    }, 500);
+}
 
+var readReports = function(paths,cb){
+    var count = 0;
+    var arr = [];
+    readReport(paths,count,arr,cb);
 }
 
 exports.getJSON = function (req, res) {

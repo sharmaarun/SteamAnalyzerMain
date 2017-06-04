@@ -29,7 +29,7 @@
 		"name":"Vertical Axis Label",
 		"param":"y_label"
 		}, {
-		"type":"text",
+		"type":"autocomplete",
 		"name":"Stream Label",
 		"param":"stream_label"
 		}

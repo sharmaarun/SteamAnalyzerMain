@@ -22,9 +22,12 @@
 package com.sa.plugins;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Iterator;
 import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.streaming.api.java.JavaDStream;
 
 /**
@@ -38,33 +41,24 @@ public class WordsFetcher implements Serializable {
 
     }
 
-    //fetch the data/tweets into string stream array
-    public static JavaDStream<String> fetch(HostStreamProvider tsp, JavaDStream<String> iStream, JavaDStream<String> output) {
+    /**
+     * 
+     * @param tsp
+     * @param iStream
+     * @param output
+     * @return 
+     */
+    public static JavaDStream<String> fetch(JavaDStream<String> iStream, JavaDStream<String> output) {
 
         
-        output = iStream.flatMap(new FlatMapFunction<String, String>() {
+        output = iStream.map(new Function<String, String>() {
             @Override
-            public Iterator<String> call(String t) throws Exception {
-                return Arrays.asList(t.split(" ")).iterator();
+            public String call(String t1) throws Exception {
+                
+                return "{\"datetime\":\""+new Date()+"\",\"msg\":\""+t1+"\"}";
             }
         });
         return output;
-        //save each bunch into the specified buffer
-        //TODO: move to other function
-//        statuses.foreachRDD(new VoidFunction<JavaRDD<String>>() {
-//            String cpPath = tsp.getCheckpointPath();
-//
-//            @Override
-//            public void call(JavaRDD<String> t1) {
-//
-//                try {
-//                    t1.coalesce(1).saveAsTextFile(cpPath + "/rdd" + t1.id());
-//                } catch (Exception ex) {
-//                    ex.printStackTrace(System.out);
-//                }
-//                return;
-//            }
-//        });
     }
 
 }

@@ -24,6 +24,11 @@
 		"type":"text",
 		"name":"Search For(comma separated)",
 		"param":"items"
+		},
+		{
+		"type":"autocomplete",
+		"name":"Search In(comma separated)",
+		"param":"args"
 		}
 	]
 }

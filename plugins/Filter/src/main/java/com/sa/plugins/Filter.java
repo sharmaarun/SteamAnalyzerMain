@@ -21,55 +21,25 @@
  */
 package com.sa.plugins;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.sa.core.IConnector;
+import com.sa.core.ProcessStage;
 import com.sa.core.StreamAnalyzer;
-import com.sa.core.StreamBase;
-import com.sa.core.commons.dto.RDDDTO;
-import java.beans.Transient;
-import java.io.Serializable;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import javafx.util.Duration;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.spark.Accumulator;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.MapFunction;
-import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.streaming.Seconds;
 import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaInputDStream;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.twitter.*;
-import twitter4j.Status;
 
 /**
  * One of the base components used to provide social tweets stream.
  *
  * @author arunsharma
  */
-public class Filter extends StreamBase implements IConnector {
+public class Filter extends ProcessStage {
 
-    private Map<String, String> fields;
-    JavaDStream<Status> stream;
     private JavaDStream<String> input, output;
 
     public Filter(JavaSparkContext _sc, StreamAnalyzer sa) {
         super(_sc, sa);
-        sc = _sc;
-        this.sa = sa;
     }
 
     /**
@@ -83,12 +53,13 @@ public class Filter extends StreamBase implements IConnector {
      *
      * @param metadata
      */
-    public void preload(HashMap<String, Object> metadata) {
-        fields = new HashMap<>();
+    @Override
+    public void preload() {
+        
         try {
-            String items = (String) metadata.get("items");
-//            System.setProperty("safilter.items", items);
-            fields.put("items", items);
+            
+            System.out.println("=================================================================");
+            System.out.println("Setting up filter : " + getId());
 
         } catch (Exception ex) {
             System.out.println("Could not initialize plugin : ");
@@ -96,17 +67,13 @@ public class Filter extends StreamBase implements IConnector {
         }
     }
 
-    @Override
-    public void setInputStreamPath(String path) {
-        this.inputStreamPath = path;
-    }
-
+    
     /**
      * TODO: Remove it
      */
     @Override
-    public void fetch() {
-
+    public void fetch(JavaDStream input) {
+        this.input = (JavaDStream<String>)input;
     }
 
     /**
@@ -121,14 +88,6 @@ public class Filter extends StreamBase implements IConnector {
         return output;
     }
 
-    @Override
-    public String getCheckpointPath() {
-        if (sa.getProperties().get("hdfsMaster") != null) {
-//            return sa.getProperties().get("hdfsMaster") + "/" + System.getProperty("reports.path") + "/" + getId() + "/";
-            return sa.getProperties().get("hdfsMaster") + "/null/Filter" + getId() + "/";
-        }
-        return null;
-    }
 
     /**
      * starts the stream of tweets
@@ -139,10 +98,7 @@ public class Filter extends StreamBase implements IConnector {
 
         try {
 
-            System.out.println("=================================================================");
-            System.out.println("Setting up filter : " + getId());
-
-            output = FilterProcessor.process(fields, input, output);
+            output = FilterProcessor.process(properties, input, output);
 
         } catch (Exception ex) {
             ex.printStackTrace(System.out);
@@ -157,10 +113,6 @@ public class Filter extends StreamBase implements IConnector {
 
     public StreamAnalyzer getSa() {
         return sa;
-    }
-
-    public Map<String, String> getFields() {
-        return fields;
     }
 
     public JavaDStream<String> getInput() {

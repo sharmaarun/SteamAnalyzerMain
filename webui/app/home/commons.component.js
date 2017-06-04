@@ -97,6 +97,12 @@ var Commons = (function () {
     Commons.clone = function (obj) {
         return $.extend(true, {}, obj);
     };
+    Commons.getEnumFromString = function (enu, str) {
+        if (enu.hasOwnProperty(str))
+            return enu[str];
+        else
+            return 0;
+    };
     Commons.loaderTimer = -1;
     Commons = __decorate([
         core_1.Injectable(), 
@@ -153,6 +159,31 @@ var FilterPipe = (function () {
     return FilterPipe;
 }());
 exports.FilterPipe = FilterPipe;
+var FilterPluginsPipe = (function () {
+    function FilterPluginsPipe() {
+    }
+    FilterPluginsPipe.prototype.transform = function (items, args) {
+        if (!items)
+            return [];
+        if (args == "" || args == undefined || args == null)
+            return items;
+        return items.filter(function (it) { if (args == "" || args == undefined || args == null) {
+            return true;
+        }
+        else {
+            return it.name == undefined ? false : it.name.indexOf(args) !== -1;
+        } });
+    };
+    FilterPluginsPipe = __decorate([
+        core_1.Pipe({
+            name: 'filterPlugins'
+        }),
+        core_1.Injectable(), 
+        __metadata('design:paramtypes', [])
+    ], FilterPluginsPipe);
+    return FilterPluginsPipe;
+}());
+exports.FilterPluginsPipe = FilterPluginsPipe;
 var FilterPropsPipe = (function () {
     function FilterPropsPipe() {
     }
@@ -187,4 +218,27 @@ exports.FilterPropsPipe = FilterPropsPipe;
     STAGE_TYPES[STAGE_TYPES["REPORT_STAGE"] = 4] = "REPORT_STAGE";
 })(exports.STAGE_TYPES || (exports.STAGE_TYPES = {}));
 var STAGE_TYPES = exports.STAGE_TYPES;
+var mouseDown = false, mouseUp = true;
+//initialize mouse capture
+document.body.onmousedown = function () {
+    mouseDown = true;
+    mouseUp = false;
+};
+document.body.onmouseup = function () {
+    mouseDown = false;
+    mouseUp = true;
+};
+//mouse class
+var MouseManager = (function () {
+    function MouseManager() {
+    }
+    MouseManager.isMouseDown = function () {
+        return mouseDown;
+    };
+    MouseManager.isMouseUp = function () {
+        return mouseUp;
+    };
+    return MouseManager;
+}());
+exports.MouseManager = MouseManager;
 //# sourceMappingURL=commons.component.js.map

@@ -51,6 +51,8 @@ var CreateProjectPage = (function () {
         this.idCounter = 0;
         this.conIdCounter = 0;
         this.connections = [];
+        this.suggestSchemaPropList = [];
+        this.suggestSchemaArgs = [];
         //event flags
         this.dragMode = false;
         this.dragging = false;
@@ -66,6 +68,12 @@ var CreateProjectPage = (function () {
         setTimeout(function () {
             _this_.saSetup();
             CreateProjectPage.__LOAD_ONCE_EDITOR = false;
+            $("#componentsBox .divider").mousedown(function (e) {
+                _this_.startResize(e);
+            });
+            $("#componentsBox .divider").mouseup(function (e) {
+                $("body").off('mousemove');
+            });
         }, 1000);
     }
     CreateProjectPage.prototype.ngOnInit = function () {
@@ -84,8 +92,23 @@ var CreateProjectPage = (function () {
     };
     CreateProjectPage.prototype.saInit = function () {
     };
+    CreateProjectPage.prototype.startResize = function (e) {
+        //text selection fix
+        if (document.selection) {
+            document.selection.empty();
+        }
+        else if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        }
+        $("body").mousemove(function (ev) {
+            var l = parseInt($("body").width()) - ev.pageX - 3;
+            $("#componentsBox").css("right", l + "px");
+            var r = parseInt(ev.pageX + 3);
+            $("#drawBox").css("left", r + "px");
+        });
+    };
     CreateProjectPage.prototype.showStage = function () {
-        console.log(this.stage);
+        //        console.log(this.stage);
     };
     CreateProjectPage.prototype.saSetup = function () {
         //if (!CreateProjectPage.__LOAD_ONCE_EDITOR) return false;
@@ -97,6 +120,25 @@ var CreateProjectPage = (function () {
         if (this.preloadProject) {
             this.reload();
         }
+    };
+    CreateProjectPage.prototype.suggestSchemaProps = function (val) {
+        var _this_ = this;
+        if (val == undefined)
+            return;
+        val = val.split(",")[val.split(",").length - 1].trim();
+        var args = commons_component_1.Commons.clone(_this_.suggestSchemaPropList);
+        var tmpArr = [];
+        for (var _i = 0, _a = Object.keys(args); _i < _a.length; _i++) {
+            var a = _a[_i];
+            var arr = args[a].values == undefined ? [] : args[a].values;
+            for (var _b = 0, arr_1 = arr; _b < arr_1.length; _b++) {
+                var it_1 = arr_1[_b];
+                if (it_1.indexOf(val) !== -1) {
+                    tmpArr.push({ from: args[a].stage, value: it_1 });
+                }
+            }
+        }
+        _this_.suggestSchemaArgs = tmpArr;
     };
     CreateProjectPage.prototype.zoom = function (steps) {
         if (steps > 10)
@@ -119,11 +161,11 @@ var CreateProjectPage = (function () {
     //Adds plugin as component to the canvas area
     CreateProjectPage.prototype.addObject = function (plug) {
         var plugin = commons_component_1.Commons.clone(plug);
-        console.log(plugin);
+        //        console.log(plugin);
         //increment the id counter
         this.idCounter += 1;
         //1. create node object
-        var n = this.addStage({ plugin: plugin, name: plugin.name, type: commons_component_1.STAGE_TYPES.STREAM_STAGE, x: 150 });
+        var n = this.addStage({ plugin: plugin, name: plugin.name, type: commons_component_1.Commons.getEnumFromString(commons_component_1.STAGE_TYPES, plugin.type), x: 150 });
         //2. add node object to topology
         //        this.addObjectToTopology(n);
     };
@@ -137,8 +179,9 @@ var CreateProjectPage = (function () {
     //options :
     //{type, x location, y location}
     CreateProjectPage.prototype.createNode = function (stage) {
-        console.log("adding node");
-        console.log(stage);
+        var _this_ = this;
+        //        console.log("adding node");
+        //        console.log(stage);
         var o = {
             id: this.idCounter,
             type: commons_component_1.STAGE_TYPES.UNDEFINED_STAGE,
@@ -165,6 +208,14 @@ var CreateProjectPage = (function () {
         for (var _b = 0, _c = o.plugin.outputs == undefined ? [] : o.plugin.outputs; _b < _c.length; _b++) {
             var po = _c[_b];
             connectorOut = node.output(po.id, po.name);
+            connectorOut.beforeRemove = function (index) {
+                //                console.log(this);
+                _this_.updateConnections(this.node);
+            };
+            connectorOut.onConnect = function (input) {
+                //                input.node.plugin.schema = Commons.clone(o.plugin.schema);
+                //                console.log(input);
+            };
         }
         //add the connections to connections array
         this.connections.push({
@@ -172,26 +223,86 @@ var CreateProjectPage = (function () {
             in: connectorIn,
             out: connectorOut
         });
+        //also push the schema to global schema properties suggetion list
+        if (o.plugin.schema != undefined && o.plugin.schema.length > 0)
+            _this_.suggestSchemaPropList.push({ stage: o.name, values: o.plugin.schema });
         //event handlers
         this.attachEvents(o, node);
-        console.log(node);
-        console.log("Created new node with options : " + o);
+        //        console.log(node);
+        console.log("Created new node : " + o.name);
         return node;
     };
     CreateProjectPage.prototype.addObjectToTopology = function (obj) {
         var _this_ = this;
         _this_.topologyCanvas.push(obj);
+        //        console.log(_this_.topologyCanvas);
     };
     CreateProjectPage.prototype.removeObjectFromTopology = function (obj) {
         var _this_ = this;
         for (var i = 0; i < _this_.topologyCanvas.length; i++) {
             var stage = _this_.topologyCanvas[i];
             if (stage.id == obj.id) {
-                console.log(stage.id + " / " + obj.id);
+                //                console.log(stage.id + " / " + obj.id);
                 _this_.topologyCanvas.splice(i, 1);
                 break;
             }
         }
+    };
+    CreateProjectPage.prototype.setSchema = function (node) {
+        if (node == undefined)
+            return;
+    };
+    /*
+     * Updates the connection endpoints related to this node/obj
+     */
+    CreateProjectPage.prototype.updateConnections = function (s) {
+        //find all the outgoing connections
+        if (s.hasOwnProperty("pathsOut")) {
+            var p = Object.keys(s.pathsOut)[0];
+            if (s.pathsOut[p].length <= 0)
+                return;
+            for (var ii = 0; ii < s.pathsOut[p].length; ii++) {
+                var to = {
+                    id: s.pathsOut[p][ii][2]["id"],
+                    name: s.pathsOut[p][ii][2]["name"],
+                    node: {
+                        id: s.pathsOut[p][ii][2]["node"]["id"],
+                        name: s.pathsOut[p][ii][2]["node"]["name"],
+                    }
+                };
+                //search for to-endpoint id in all stages
+                var found = false;
+                var n = {};
+                //                console.log(to);
+                if (to.node.id != undefined && to.node.id != "" && to.node.id != null) {
+                    for (var _i = 0, _a = this.topologyCanvas; _i < _a.length; _i++) {
+                        var ss = _a[_i];
+                        if (ss.id == to.node.id) {
+                            found = true;
+                            n = ss;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        //                        console.log("found");
+                        //                        console.log(ss);
+                        //remove the schema
+                        //                        ss.plugin.schema = [];
+                        ss.pathsIn[Object.keys(ss.pathsIn)[0]] = [];
+                    }
+                }
+                else {
+                    console.log("no connection found!");
+                }
+            }
+        }
+    };
+    /*
+     * get type of stage from string
+     */
+    CreateProjectPage.prototype.getStageType = function (val) {
+        if (val)
+            ;
     };
     /*
      *Attach events to nodes
@@ -210,6 +321,8 @@ var CreateProjectPage = (function () {
         };
         // remove event
         node.onRemove = function () {
+            _this_.updateConnections(this);
+            //            console.log(_this_.topologyCanvas);
             _this_.removeObjectFromTopology(this);
         };
     };
@@ -233,8 +346,9 @@ var CreateProjectPage = (function () {
     CreateProjectPage.prototype.showProperties = function (node) {
         var _this_ = this;
         _this_.selectedNode = node;
-        console.log(_this_.selectedNode);
+        //        console.log(_this_.selectedNode);
         $("#propertiesEditor").modal("show");
+        _this_.suggestSchemaArgs = [];
     };
     CreateProjectPage.prototype.stripUnwantedNodeProperties = function () {
         var stages = [];
@@ -280,23 +394,28 @@ var CreateProjectPage = (function () {
                     var p = _g[_f];
                     if (s.pathsOut[p].length <= 0)
                         break;
-                    var from = {
-                        id: s.pathsOut[p][0][1]["id"],
-                        name: s.pathsOut[p][0][1]["name"],
-                        node: {
-                            id: s.pathsOut[p][0][1]["node"]["id"],
-                            name: s.pathsOut[p][0][1]["node"]["name"],
-                        }
-                    };
-                    var to = {
-                        id: s.pathsOut[p][0][2]["id"],
-                        name: s.pathsOut[p][0][2]["name"],
-                        node: {
-                            id: s.pathsOut[p][0][2]["node"]["id"],
-                            name: s.pathsOut[p][0][2]["node"]["name"],
-                        }
-                    };
-                    ns.pathsOut[p] = { from: from, to: to };
+                    //                    console.log(s.pathsOut[p]);
+                    ns.pathsOut[p] = [];
+                    for (var nsi = 0; nsi < s.pathsOut[p].length; nsi++) {
+                        //                        console.log(s.pathsOut[p][nsi]);
+                        var from = {
+                            id: s.pathsOut[p][nsi][1]["id"],
+                            name: s.pathsOut[p][nsi][1]["name"],
+                            node: {
+                                id: s.pathsOut[p][nsi][1]["node"]["id"],
+                                name: s.pathsOut[p][nsi][1]["node"]["name"],
+                            }
+                        };
+                        var to = {
+                            id: s.pathsOut[p][nsi][2]["id"],
+                            name: s.pathsOut[p][nsi][2]["name"],
+                            node: {
+                                id: s.pathsOut[p][nsi][2]["node"]["id"],
+                                name: s.pathsOut[p][nsi][2]["node"]["name"],
+                            }
+                        };
+                        ns.pathsOut[p].push({ from: from, to: to });
+                    }
                 }
             }
             if (s.hasOwnProperty("outputs")) {
@@ -346,14 +465,15 @@ var CreateProjectPage = (function () {
         //one done, make the connections
         for (var i = 0; i < topology.stages.length; i++) {
             var s = topology.stages[i];
-            var outs = s.pathsOut;
+            var outs = s.pathsOut[Object.keys(s.pathsOut)[0]];
+            //            console.log(outs);
             var conn1, conn2;
-            for (var _i = 0, _a = Object.keys(outs); _i < _a.length; _i++) {
-                var k = _a[_i];
-                var path = outs[k];
-                console.log(path);
-                if (path.length <= 0)
-                    continue;
+            if (outs == undefined)
+                continue;
+            for (var _i = 0, outs_1 = outs; _i < outs_1.length; _i++) {
+                var path = outs_1[_i];
+                //                console.log(path);
+                //if (path.length <= 0) continue;
                 for (var j = 0; j < this.connections.length; j++) {
                     var con = this.connections[j];
                     if (path.from.node.id == con.id) {
@@ -363,13 +483,14 @@ var CreateProjectPage = (function () {
                         conn2 = con.in;
                     }
                 }
+                //                console.log("Connecting : ");
+                if (conn1 == undefined || conn2 == undefined)
+                    continue;
+                //                console.log(conn1);
+                //                console.log(conn2);
+                //                conn2.node.plugin.schema = Commons.clone(conn1.node.plugin.schema);
+                conn1.connect(conn2);
             }
-            console.log("Connecting : ");
-            if (conn1 == undefined || conn2 == undefined)
-                continue;
-            //            console.log(conn1.name);
-            //            console.log(conn2.name);
-            conn1.connect(conn2);
         }
     };
     CreateProjectPage.prototype.save = function () {
@@ -387,7 +508,7 @@ var CreateProjectPage = (function () {
         //get the project json
         this.http.post('/api/projects/json', { name: this.projectName }, this.headers).map(function (response) { return response.json(); })
             .subscribe(function (p) {
-            console.log(p);
+            //                console.log(p);
             _this.topology = p;
             _this.topology.name = _this.projectName;
             _this.preloadProject = true;
@@ -448,7 +569,8 @@ var CreateProjectPage = (function () {
     CreateProjectPage = __decorate([
         core_1.Component({
             templateUrl: 'app/project/create-project.component.html',
-            providers: [http_1.HTTP_PROVIDERS]
+            providers: [http_1.HTTP_PROVIDERS],
+            pipes: [commons_component_1.FilterPluginsPipe]
         }), 
         __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute])
     ], CreateProjectPage);

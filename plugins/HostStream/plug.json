@@ -25,5 +25,9 @@
                 "name":"Port",
                 "param":"port"
                 }
+	],
+	"schema":[
+	"datetime",
+	"msg"
 	]
 }

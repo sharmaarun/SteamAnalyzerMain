@@ -21,46 +21,22 @@
  */
 package com.sa.plugins;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.sa.core.IConnector;
+import com.sa.core.ReportStage;
 import com.sa.core.StreamAnalyzer;
-import com.sa.core.StreamBase;
-import com.sa.core.commons.dto.RDDDTO;
-import java.beans.Transient;
-import java.io.Serializable;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import javafx.util.Duration;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.spark.Accumulator;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.MapFunction;
-import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.streaming.Seconds;
 import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaInputDStream;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.twitter.*;
-import twitter4j.Status;
 
 /**
  * One of the base components used to provide social tweets stream.
  *
  * @author arunsharma
  */
-public class ReportGenerator extends StreamBase implements IConnector {
+public class ReportGenerator extends ReportStage {
 
     private Map<String, String> fields;
     private JavaDStream<String> input; //TODO: make it more flexible
@@ -82,33 +58,14 @@ public class ReportGenerator extends StreamBase implements IConnector {
      *
      * @param metadata
      */
-    public void preload(HashMap<String, Object> metadata) {
-        fields = new HashMap<>();
-        try {
-            String x_label = (String) metadata.get("x_label");
-            fields.put("x_label", x_label);
-            String y_label = (String) metadata.get("y_label");
-            fields.put("y_label", y_label);
-            String stream_label = (String) metadata.get("stream_label");
-            fields.put("stream_label", stream_label);
-            
-        } catch (Exception ex) {
-            System.out.println("Could not initialize plugin : ");
-            ex.printStackTrace();
-        }
+    @Override
+    public void preload() {
+        
     }
 
     @Override
-    public void setInputStreamPath(String path) {
-        this.inputStreamPath = path;
-    }
-
-    /**
-     * TODO: Remove it
-     */
-    @Override
-    public void fetch() {
-
+    public void fetch(JavaDStream input) {
+        this.input = (JavaDStream<String>)input;
     }
 
     /**
@@ -118,17 +75,8 @@ public class ReportGenerator extends StreamBase implements IConnector {
      * @return
      */
     @Override
-    public JavaDStream poll() {
+    public JavaDStream<String> poll() {
 
-        return null;
-    }
-
-    @Override
-    public String getCheckpointPath() {
-        if (sa.getProperties().get("hdfsMaster") != null) {
-//            return sa.getProperties().get("hdfsMaster") + "/" + System.getProperty("reports.path") + "/" + getId() + "/";
-            return sa.getProperties().get("hdfsMaster") + "/null/ReportGenerator" + getId() + "/";
-        }
         return null;
     }
 
@@ -137,7 +85,6 @@ public class ReportGenerator extends StreamBase implements IConnector {
      */
     @Override
     public void start() {
-//        while (true) {
 
         try {
             
@@ -145,18 +92,12 @@ public class ReportGenerator extends StreamBase implements IConnector {
                 System.out.println("Settin up Report");
                 Configuration conf = new Configuration();
                 FileSystem fs = FileSystem.get(new URI(sa.getProperties().get("hdfsMaster")), conf);
-                ReportProcessor.process(fields, fs, input, inputStreamPath);
+                ReportProcessor.process(properties, fs, input, getCachePath());
 
             
         } catch (Exception ex) {
             ex.printStackTrace(System.out);
         }
-//            try{
-//                Thread.sleep(1000);
-//            } catch (Exception ex ){
-//                ex.printStackTrace(System.out);
-//            }
-
     }
 
     public StreamAnalyzer getSa() {
@@ -174,7 +115,6 @@ public class ReportGenerator extends StreamBase implements IConnector {
     public void setInput(JavaDStream<String> input) {
         this.input = input;
     }
-
     
 
 }

@@ -102,7 +102,12 @@ export class Commons {
     }
 
     public static clone(obj) {
-       return $.extend(true,{},obj);
+        return $.extend(true, {}, obj);
+    }
+
+    public static getEnumFromString(enu, str) {
+        if (enu.hasOwnProperty(str)) return enu[str];
+        else return 0;
     }
 
 
@@ -133,6 +138,18 @@ export class FilterPipe implements PipeTransform {
 }
 
 @Pipe({
+    name: 'filterPlugins'
+})
+@Injectable()
+export class FilterPluginsPipe implements PipeTransform {
+    transform(items: any[], args?): any[] {
+        if (!items) return [];
+        if (args == "" || args == undefined || args == null) return items;
+        return items.filter(it => { if (args == "" || args == undefined || args == null) { return true; } else { return it.name == undefined ? false : it.name.indexOf(args) !== -1 } });
+    }
+}
+
+@Pipe({
     name: 'filterProps'
 })
 @Injectable()
@@ -151,4 +168,32 @@ export enum STAGE_TYPES {
     PROCESS_STAGE,
     DATABASE_STAGE,
     REPORT_STAGE
+}
+
+
+
+var mouseDown=false,mouseUp=true;
+//initialize mouse capture
+document.body.onmousedown = function() {
+    mouseDown=true;
+    mouseUp=false;
+}
+document.body.onmouseup = function() {
+    mouseDown=false;
+    mouseUp=true;
+}
+//mouse class
+
+export class MouseManager {
+    
+    
+    
+    public static isMouseDown() {
+        return mouseDown;
+    }
+    
+    public static isMouseUp() {
+        return mouseUp;
+    }
+
 }

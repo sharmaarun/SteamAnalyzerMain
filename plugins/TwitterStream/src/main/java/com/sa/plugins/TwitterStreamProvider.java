@@ -21,22 +21,15 @@
  */
 package com.sa.plugins;
 
-import com.sa.core.IConnector;
 import com.sa.core.StreamAnalyzer;
-import com.sa.core.StreamBase;
-import com.sa.core.commons.dto.RDDDTO;
+import com.sa.core.StreamStage;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.streaming.Seconds;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.twitter.*;
-import org.scalatest.concurrent.TimeoutTask;
 import twitter4j.Status;
 
 /**
@@ -44,7 +37,7 @@ import twitter4j.Status;
  *
  * @author arunsharma
  */
-public class TwitterStreamProvider extends StreamBase implements IConnector {
+public class TwitterStreamProvider extends StreamStage {
 
     private Map<String, String> creds;
     JavaDStream<Status> stream;
@@ -73,16 +66,14 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
      *
      * @param metadata
      */
-    public void preload(HashMap<String, Object> metadata) {
+    @Override
+    public void preload() {
         try {
 
-            // update properties
-            updateProperties(metadata);
-
-            String ck = (String) metadata.get("consumer_key");
-            String cs = (String) metadata.get("consumer_secret");
-            String at = (String) metadata.get("access_token");
-            String ats = (String) metadata.get("access_token_secret");
+            String ck = properties.get("consumer_key");
+            String cs = properties.get("consumer_secret");
+            String at = properties.get("access_token");
+            String ats = properties.get("access_token_secret");
 
             System.setProperty("twitter4j.oauth.consumerKey", ck);
             System.setProperty("twitter4j.oauth.consumerSecret", cs);
@@ -98,19 +89,6 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
 
     }
 
-    @Override
-    public void setInputStreamPath(String path) {
-        this.inputStreamPath = path;
-    }
-
-    /**
-     * TODO: Remove it
-     */
-    @Override
-    public void fetch() {
-
-    }
-
     /**
      * used by other stages to poll data from the temporary memory. i.e. the
      * bunch of tweets received in last iteration.
@@ -121,14 +99,6 @@ public class TwitterStreamProvider extends StreamBase implements IConnector {
     public JavaDStream<String> poll() {
 
         return this.output;
-    }
-
-    @Override
-    public String getCheckpointPath() {
-        if (sa.getProperties().get("hdfsMaster") != null) {
-            return sa.getProperties().get("hdfsMaster") + "/" + sa.getProperties().get("checkpointPath") + "/TwitterStream" + getId() + "/";
-        }
-        return null;
     }
 
     /**

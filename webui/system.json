@@ -4,7 +4,10 @@
     },
     "projects":{
         "useHDFS": false,
-        "localPath":"/home/arunsharma/MS/research/THS/projects/test-twitter/projects"
+        "localPath":"/home/arunsharma/MS/research/THS/projects/test-twitter/projects",
+        "hdfs": {
+			"path": "/user/hadoop/projects"
+		}
     },
     "hadoop" : {
         "path": "/home/hadoop/hadoop",

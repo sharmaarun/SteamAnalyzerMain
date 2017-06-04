@@ -23,30 +23,21 @@ package com.sa.plugins;
 
 import com.sa.core.IConnector;
 import com.sa.core.StreamAnalyzer;
-import com.sa.core.StreamBase;
-import com.sa.core.commons.dto.RDDDTO;
+import com.sa.core.StreamStage;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.streaming.Seconds;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.twitter.*;
-import org.scalatest.concurrent.TimeoutTask;
-import twitter4j.Status;
 
 /**
  * One of the base components used to provide social tweets stream.
  *
  * @author arunsharma
  */
-public class HostStreamProvider extends StreamBase implements IConnector {
+public class HostStreamProvider extends StreamStage implements IConnector {
 
-    private Map<String, String> creds;
     JavaDStream<String> stream;
     private JavaDStream<String> output; //TODO: make it more flexible
 //    private StreamAnalyzer sa;
@@ -73,15 +64,12 @@ public class HostStreamProvider extends StreamBase implements IConnector {
      *
      * @param metadata
      */
-    public void preload(HashMap<String, Object> metadata) {
+    @Override
+    public void preload() {
         try {
-
-            // update properties
-            updateProperties(metadata);
-            
             //create a twitter stream using spark streaing context
-            String host = metadata.get("hostname").toString();
-            String sport = metadata.get("port").toString();
+            String host = properties.get("hostname").toString();
+            String sport = properties.get("port").toString();
             
             host = host==null?"localhost":host;
             int port = sport==null?9999:Integer.parseInt(sport);
@@ -93,23 +81,9 @@ public class HostStreamProvider extends StreamBase implements IConnector {
 
     }
 
-    @Override
-    public void setInputStreamPath(String path) {
-        this.inputStreamPath = path;
-    }
-
     /**
-     * TODO: Remove it
-     */
-    @Override
-    public void fetch() {
-
-    }
-
-    /**
-     * used by other stages to poll data from the temporary memory. i.e. the
-     * bunch of tweets received in last iteration.
-     *
+     * used by other stages to poll data from this stage
+     * 
      * @return
      */
     @Override
@@ -118,33 +92,16 @@ public class HostStreamProvider extends StreamBase implements IConnector {
         return this.output;
     }
 
-    @Override
-    public String getCheckpointPath() {
-        if (sa.getProperties().get("hdfsMaster") != null) {
-            return sa.getProperties().get("hdfsMaster") + "/" + sa.getProperties().get("checkpointPath") + "/TwitterStream" + getId() + "/";
-        }
-        return null;
-    }
-
     /**
      * starts the stream of tweets
      */
     @Override
     public void start() {
         try {
-            output = WordsFetcher.fetch(this, stream, output); //workaround to escape from serialization of the whole class.
+            output = WordsFetcher.fetch(stream, output); //workaround to escape from serialization of the whole class.
 
         } catch (Exception ex) {
             ex.printStackTrace(System.out);
         }
     }
-
-    public Map<String, String> getCreds() {
-        return creds;
-    }
-
-    public void setCreds(Map<String, String> creds) {
-        this.creds = creds;
-    }
-
 }
