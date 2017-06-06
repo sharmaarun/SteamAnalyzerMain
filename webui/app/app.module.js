@@ -27,7 +27,6 @@ var core_1 = require('@angular/core');
 var platform_browser_1 = require('@angular/platform-browser');
 var app_routing_1 = require('./app.routing');
 var http_1 = require('@angular/http');
-var ng2_charts_1 = require('ng2-charts/ng2-charts');
 var app_component_1 = require('./app.component');
 var home_component_1 = require('./home/home.component');
 var create_project_component_1 = require('./project/create-project.component');
@@ -39,7 +38,7 @@ var AppModule = (function () {
     }
     AppModule = __decorate([
         core_1.NgModule({
-            imports: [platform_browser_1.BrowserModule, app_routing_1.routing, http_1.HttpModule, ng2_charts_1.ChartsModule],
+            imports: [platform_browser_1.BrowserModule, app_routing_1.routing, http_1.HttpModule],
             declarations: [app_component_1.AppComponent, home_component_1.HomeComponent, create_project_component_1.CreateProjectPage, list_projects_component_1.ListProjectsPage, list_plugins_component_1.ListPluginsPage, report_component_1.ReportPage],
             bootstrap: [app_component_1.AppComponent]
         }), 

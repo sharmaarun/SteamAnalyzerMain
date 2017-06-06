@@ -216,7 +216,9 @@ var Commons = (function () {
         var obj = {};
         for (var _i = 0, cookies_1 = cookies; _i < cookies_1.length; _i++) {
             var c = cookies_1[_i];
-            obj[c.split("=")[0].trim()] = c.split("=")[1].trim();
+            var k = c.split("=")[0] == undefined ? "" : c.split("=")[0].trim();
+            var v = c.split("=")[1] == undefined ? "" : c.split("=")[1].trim();
+            obj[k] = v;
         }
         console.log(obj);
         return obj[key];
@@ -482,7 +484,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
-var ng2_charts_1 = require('ng2-charts/ng2-charts');
 var commons_component_1 = require('./commons.component');
 var http_1 = require("@angular/http");
 var HomeComponent = (function () {
@@ -497,7 +498,6 @@ var HomeComponent = (function () {
         };
         this.headers = new http_1.Headers({ "Content-Type": "application/json" });
         this.title = "Stream Analyzer";
-        this.resourceChart = {};
         this.reports = [];
         this.filterReports = "";
         this.stats = {
@@ -509,49 +509,6 @@ var HomeComponent = (function () {
             }
         };
         this.projectStatus = {};
-        this.loadedCharts = false;
-        this.chartsRef = {};
-        this.doughnutChartLabels = ['RAM (%/100)', 'DISK I/O (%/100)', 'CPU (%/100)'];
-        this.doughnutChartData = [30, 50, 99];
-        this.doughnutChartType = 'doughnut';
-        this.lineChartData = [
-            { data: [65, 59, 80, 81, 56, 55, 40], label: 'Project 1' },
-            { data: [65, 59, 80, 81, 56, 55, 40], label: 'Project 2' }
-        ];
-        this.lineChartLabels = ['1', '2', '3', '4', '5', '6', '7'];
-        this.lineChartOptions = {
-            animation: false,
-            responsive: true
-        };
-        this.lineChartColors = [
-            {
-                backgroundColor: 'rgba(148,159,177,0.2)',
-                borderColor: 'rgba(148,159,177,1)',
-                pointBackgroundColor: 'rgba(148,159,177,1)',
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'rgba(148,159,177,0.8)'
-            },
-            {
-                backgroundColor: 'rgba(77,83,96,0.2)',
-                borderColor: 'rgba(77,83,96,1)',
-                pointBackgroundColor: 'rgba(77,83,96,1)',
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'rgba(77,83,96,1)'
-            },
-            {
-                backgroundColor: 'rgba(148,159,177,0.2)',
-                borderColor: 'rgba(148,159,177,1)',
-                pointBackgroundColor: 'rgba(148,159,177,1)',
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'rgba(148,159,177,0.8)'
-            }
-        ];
-        this.lineChartLegend = true;
-        this.lineChartType = 'line';
-        this.lineChartLabelUpdate = this.lineChartLabels[6];
         this.flag = false;
         var _this_ = this;
         if (commons_component_1.Commons.getCookie("loggedin") == "true") {
@@ -563,22 +520,6 @@ var HomeComponent = (function () {
         if (this.loggedIn)
             this.init();
     }
-    HomeComponent.prototype.updateFunction = function () {
-        var _this_ = this;
-        _this_.appendRandom(_this_.lineChartData[0].data);
-        _this_.appendRandom(_this_.lineChartData[1].data);
-        _this_.chartsRef.lineChart.ngOnChanges({});
-    };
-    HomeComponent.prototype.appendRandom = function (arr) {
-        var tmp = 0;
-        for (var i = 0; i < arr.length; i++) {
-            tmp = arr[i];
-            if (i < arr.length - 1) {
-                arr[i] = arr[i + 1];
-            }
-        }
-        arr[arr.length - 1] = Math.random() * 100;
-    };
     HomeComponent.prototype.init = function () {
         var _this_ = this;
         //load status
@@ -588,30 +529,6 @@ var HomeComponent = (function () {
         var _this_ = this;
         _this_.commons.getStatus(function (data) { _this_.mapStats(data); });
         _this_.initReports();
-    };
-    HomeComponent.prototype.initCharts = function () {
-        this.resourceChart.type = "doughnut";
-        this.resourceChart.data = {
-            labels: [
-                "RAM (%/100)",
-                "DISK (%/100)",
-                "CPU (%/100)"
-            ],
-            datasets: [
-                {
-                    data: [30, 50, 99],
-                    backgroundColor: [
-                        "#FF6384",
-                        "#36A2EB",
-                        "#FFCE56"
-                    ],
-                    hoverBackgroundColor: [
-                        "#FF6384",
-                        "#36A2EB",
-                        "#FFCE56"
-                    ]
-                }]
-        };
     };
     HomeComponent.prototype.initReports = function () {
         var _this = this;
@@ -668,10 +585,6 @@ var HomeComponent = (function () {
             _this_.projectStatus[name] = running;
         });
     };
-    __decorate([
-        core_1.ViewChildren(ng2_charts_1.BaseChartDirective), 
-        __metadata('design:type', ng2_charts_1.BaseChartDirective)
-    ], HomeComponent.prototype, "charts", void 0);
     HomeComponent = __decorate([
         core_1.Component({
             templateUrl: 'app/home/home.component.html',
