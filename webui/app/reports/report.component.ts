@@ -16,7 +16,6 @@
 
 
 import {Component, ViewChildren} from '@angular/core';
-import {BaseChartDirective} from 'ng2-charts/ng2-charts';
 import {HTTP_PROVIDERS, Http, Response, Headers, RequestOptions} from "@angular/http";
 import {Observable} from "rxjs/Rx";
 import {Commons} from '../home/commons.component';
@@ -27,7 +26,6 @@ import {ActivatedRoute} from '@angular/router';
 })
 
 export class ReportPage {
-    @ViewChildren(BaseChartDirective) charts: BaseChartDirective;
     ngOnInit() {
         this.route.params.subscribe(params => {
             this.projectName = params['name']; // (+) converts string 'id' to a number
