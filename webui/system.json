@@ -14,7 +14,8 @@
         "cmd": {
 			"start":"/sbin/start-dfs.sh &&",
 			"stop":"/sbin/stop-master.sh"
-			 }
+			 },
+	"hdfsMaster":"hdfs://master:9000"
     },
     "template": {
         "path": "/home/arunsharma/MS/research/THS/projects/test-twitter",
@@ -43,6 +44,11 @@
 		"cmd": {
 			"start":"/sbin/start-master.sh",
 			"stop":"/sbin/stop-master.sh"
-			 }
+			 },
+	"master":"spark://master:8085",
+	"ui" :{
+		"url":"master",
+		"port":8080
+	}
 	}
 }

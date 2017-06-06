@@ -1,0 +1,54 @@
+{
+    "path":{
+        "localPath":"/home/arunsharma/MS/research/THS/projects/test-twitter"
+    },
+    "projects":{
+        "useHDFS": false,
+        "localPath":"/home/arunsharma/MS/research/THS/projects/test-twitter/projects",
+        "hdfs": {
+			"path": "/user/hadoop/projects"
+		}
+    },
+    "hadoop" : {
+        "path": "/home/hadoop/hadoop",
+        "cmd": {
+			"start":"/sbin/start-dfs.sh &&",
+			"stop":"/sbin/stop-master.sh"
+			 },
+	"hdfs":"hdfs://master:9000"
+    },
+    "template": {
+        "path": "/home/arunsharma/MS/research/THS/projects/test-twitter",
+        "name" : "template"
+    },
+    "library" : {
+        "core": {
+            "path" : "/home/arunsharma/MS/research/THS/projects/test-twitter/core",
+            "type" : "maven"
+        }
+    },
+    "hdfsConnectionParams": {
+        "user": "hadoop",
+        "namenode_host": "localhost",
+        "namenode_port": 50070
+    },
+    "plugins" : {
+        "path" : "/home/arunsharma/MS/research/THS/projects/test-twitter/plugins"
+    },
+    "compiler" : {
+        "path" : "/home/arunsharma/MS/research/THS/projects/test-twitter/compiler/target",
+        "executable" : "compiler-1.0-SNAPSHOT-jar-with-dependencies.jar"
+    },
+    "spark" : {
+		"path":"/home/hadoop/spark-2.0.0-bin-hadoop2.7",
+		"cmd": {
+			"start":"/sbin/start-master.sh",
+			"stop":"/sbin/stop-master.sh"
+			 },
+	"master":"spark://master:8085",
+	"ui" :{
+		"url":"master",
+		"port":8080
+	}
+	}
+}

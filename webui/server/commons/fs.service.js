@@ -115,6 +115,17 @@ exports.run_cmd = function(cmd, args) {
     return {};
 }
 
+exports.run_cmd_async = function(cmd, args) {
+    try {
+  var spawn = require('child_process').spawn,
+  child = spawn(cmd, args);
+  return child;
+    }catch (e) {
+        console.log(e);
+    }
+    return {};
+}
+
 exports.runCmd = function(cmd, args, cb) {
     try {
   var spawn = require('child_process').spawn,

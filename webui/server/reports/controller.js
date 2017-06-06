@@ -121,7 +121,7 @@ exports.compileProject = function (req, res) {
     try {
 
         //pass the project full path+name to compiler
-        var compile = new fs.run_cmd("java",
+        var compile = new fs.runCmd("java",
                 ["-jar",
                     app.conf.compiler.path + "/" + app.conf.compiler.executable,
                     "VERBOSE",
@@ -130,9 +130,10 @@ exports.compileProject = function (req, res) {
                     "COMPILE",
                     app.conf.projects.localPath + "/" + req.body.name,
                     app.conf.projects.localPath + "/" + req.body.name
-                ]);
+                ],function(o,e){console.log(o+"\n"+e);});
 
-        return res.json({status: "OK", msg: "Command Executed!", output: compile.stdout.toString(), error: compile.stderr.toString()});
+//        return res.json({status: "OK", msg: "Command Executed!", output: compile.stdout.toString(), error: compile.stderr.toString()});
+        return res.json({status: "OK", msg: "Command Executed!", output: {port:port}, error: compile.stderr.toString()});
 
 
 

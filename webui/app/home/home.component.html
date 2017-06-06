@@ -89,13 +89,14 @@ limitations under the License.
                                                 <tr *ngFor="let r of reports | filterProjects :  filterReports; let i=index ">
                                                     <td>{{i}}</td>
                                                     <td>{{r.displayName}}</td>
-                                                    <td>____</td>
+                                                    <td>{{r.driverId}}</td>
                                                     <td>
-                                                        <span class="label label-success">Running</span>
+                                                        <span  *ngIf="projectStatus[r.driverId]==true" class="label label-success" >Running</span>
+                                                        <span  *ngIf="projectStatus[r.driverId]==false" class="label label-danger" >Stopped</span>
                                                     </td>
                                                     <td>
-                                                        <button title="Run Project" class="btn btn-sm btn-orange" ><i class="material-icons">play_arrow</i></button>
-                                                        <button title="View Report" class="btn btn-sm btn-orange" ><i class="material-icons">assignment</i></button>
+                                                        <!--<button title="Run Project" class="btn btn-sm btn-orange" ><i class="material-icons">play_arrow</i></button>-->
+                                                        <button [routerLink]="['/report/'+r.driverId]" *ngIf="projectStatus[r.driverId]==true" title="View Report" class="btn btn-sm btn-orange" ><i class="material-icons">assignment</i></button>
                                                     </td>
                                                 </tr>
                                             </tbody>

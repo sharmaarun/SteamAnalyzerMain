@@ -39,7 +39,7 @@ var AppComponent = (function () {
         }
     }
     AppComponent.prototype.logout = function () {
-        document.cookie = "";
+        document.cookie = "loggedin=false";
         window.location.reload();
     };
     AppComponent = __decorate([
@@ -187,9 +187,20 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
+var http_1 = require("@angular/http");
 var Commons = (function () {
-    function Commons() {
+    function Commons(http) {
+        this.http = http;
+        this.headers = new http_1.Headers({ "Content-Type": "application/json" });
+        console.log(http);
+        this.http = http;
     }
+    Commons.escapeHtml = function (string) {
+        var _this_ = this;
+        return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+            return " ";
+        });
+    };
     Commons.getUUID = function () {
         var d = new Date().getTime();
         var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -198,6 +209,20 @@ var Commons = (function () {
             return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
         return uuid;
+    };
+    //cookies
+    Commons.getCookie = function (key) {
+        var cookies = document.cookie.split(";");
+        var obj = {};
+        for (var _i = 0, cookies_1 = cookies; _i < cookies_1.length; _i++) {
+            var c = cookies_1[_i];
+            obj[c.split("=")[0].trim()] = c.split("=")[1].trim();
+        }
+        console.log(obj);
+        return obj[key];
+    };
+    Commons.setCookie = function (key, val) {
+        document.cookie = key + "=" + val;
     };
     Commons.loaderShow = function () {
         console.log("in loaershow");
@@ -266,10 +291,36 @@ var Commons = (function () {
         else
             return 0;
     };
+    Commons.prototype.getStatus = function (cb) {
+        var _this_ = this;
+        Commons.loaderShow();
+        var action;
+        _this_.http.get('/api/dash/services/status', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            Commons.loaderDone("");
+            action = Commons.toast({ content: "Loaded Status.", timeout: 1000 });
+            cb(d.payload);
+        }, function (e) {
+            Commons.loaderDone("");
+            console.log("");
+        }, function (s) {
+            Commons.loaderDone("");
+            console.log("Fetched Projects!");
+        });
+    };
     Commons.loaderTimer = -1;
+    Commons.entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
     Commons = __decorate([
         core_1.Injectable(), 
-        __metadata('design:paramtypes', [])
+        __metadata('design:paramtypes', [http_1.Http])
     ], Commons);
     return Commons;
 }());
@@ -435,8 +486,9 @@ var ng2_charts_1 = require('ng2-charts/ng2-charts');
 var commons_component_1 = require('./commons.component');
 var http_1 = require("@angular/http");
 var HomeComponent = (function () {
-    function HomeComponent(http) {
+    function HomeComponent(http, commons) {
         this.http = http;
+        this.commons = commons;
         this.loggedIn = false;
         this.user = { email: "arun.sharma@upr.edu", username: "arun", password: "arun" };
         this.fUser = {
@@ -456,6 +508,7 @@ var HomeComponent = (function () {
                 status: false
             }
         };
+        this.projectStatus = {};
         this.loadedCharts = false;
         this.chartsRef = {};
         this.doughnutChartLabels = ['RAM (%/100)', 'DISK I/O (%/100)', 'CPU (%/100)'];
@@ -500,15 +553,15 @@ var HomeComponent = (function () {
         this.lineChartType = 'line';
         this.lineChartLabelUpdate = this.lineChartLabels[6];
         this.flag = false;
-        if (document.cookie.match("loggedin=true") != null) {
+        var _this_ = this;
+        if (commons_component_1.Commons.getCookie("loggedin") == "true") {
+            console.log(commons_component_1.Commons.getCookie("loggedin"));
             console.log("Loggedin.");
             this.loggedIn = true;
         }
         console.log(document.cookie);
         if (this.loggedIn)
             this.init();
-        //load status
-        this.getStatus();
     }
     HomeComponent.prototype.updateFunction = function () {
         var _this_ = this;
@@ -528,21 +581,13 @@ var HomeComponent = (function () {
     };
     HomeComponent.prototype.init = function () {
         var _this_ = this;
-        //        this.initCharts();
-        this.initReports();
-        //        setTimeout(function() {
-        //            _this_.charts.forEach(function(cc) {
-        //                _this_.chartsRef[cc.element.nativeElement.id] = cc;
-        //            });
-        //            _this_.loadedCharts = true;
-        //            console.log(_this_.chartsRef);
-        //
-        //        }, 500);
-        //        setInterval(function() {
-        //            if (_this_.loadedCharts)
-        //                _this_.updateFunction();
-        //
-        //        }, 2000);
+        //load status
+        _this_.getStatus();
+    };
+    HomeComponent.prototype.getStatus = function () {
+        var _this_ = this;
+        _this_.commons.getStatus(function (data) { _this_.mapStats(data); });
+        _this_.initReports();
     };
     HomeComponent.prototype.initCharts = function () {
         this.resourceChart.type = "doughnut";
@@ -571,12 +616,14 @@ var HomeComponent = (function () {
     HomeComponent.prototype.initReports = function () {
         var _this = this;
         commons_component_1.Commons.loaderShow();
+        this.reports = [];
         var action;
         this.http.get('/api/projects', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
             commons_component_1.Commons.loaderDone("");
             action = commons_component_1.Commons.toast({ content: "Loaded Reports.", timeout: 1000 });
             for (var i = 0; i < d.length; i++) {
                 _this.reports.push(d[i]);
+                _this.getRunStatus(d[i].driverId);
             }
         }, function (e) {
             commons_component_1.Commons.loaderDone("");
@@ -592,7 +639,7 @@ var HomeComponent = (function () {
             return;
         }
         this.loggedIn = true;
-        document.cookie = "loggedin=true";
+        commons_component_1.Commons.setCookie("loggedin", "true");
         window.location.reload();
         return false;
     };
@@ -605,20 +652,20 @@ var HomeComponent = (function () {
             console.log(data);
         }
     };
-    HomeComponent.prototype.getStatus = function () {
+    HomeComponent.prototype.getProjectStatus = function (name, cb) {
         var _this_ = this;
-        commons_component_1.Commons.loaderShow();
-        var action;
-        this.http.get('/api/dash/services/status', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
-            commons_component_1.Commons.loaderDone("");
-            action = commons_component_1.Commons.toast({ content: "Loaded Status.", timeout: 1000 });
-            _this_.mapStats(d.payload);
+        this.http.post('/api/projects/status', { name: name }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+            cb(p.data.running);
         }, function (e) {
-            commons_component_1.Commons.loaderDone("");
-            console.log("");
-        }, function (s) {
-            commons_component_1.Commons.loaderDone("");
-            console.log("Fetched Projects!");
+            commons_component_1.Commons.loaderDone(e);
+        }, function (s) { console.log(s); });
+    };
+    HomeComponent.prototype.getRunStatus = function (name) {
+        this.projectStatus[name] = false;
+        var _this_ = this;
+        this.getProjectStatus(name, function (running) {
+            _this_.projectStatus[name] = running;
         });
     };
     __decorate([
@@ -628,10 +675,10 @@ var HomeComponent = (function () {
     HomeComponent = __decorate([
         core_1.Component({
             templateUrl: 'app/home/home.component.html',
-            providers: [http_1.HTTP_PROVIDERS],
+            providers: [http_1.HTTP_PROVIDERS, commons_component_1.Commons],
             pipes: [commons_component_1.FilterPipe, commons_component_1.FilterProjectsPipe]
         }), 
-        __metadata('design:paramtypes', [http_1.Http])
+        __metadata('design:paramtypes', [http_1.Http, commons_component_1.Commons])
     ], HomeComponent);
     return HomeComponent;
 }());
@@ -893,11 +940,12 @@ var http_1 = require("@angular/http");
 var router_1 = require('@angular/router');
 var commons_component_1 = require('../home/commons.component');
 var CreateProjectPage = (function () {
-    function CreateProjectPage(_http, route) {
+    function CreateProjectPage(_http, route, commons) {
         this._http = _http;
         this.route = route;
         this.projectName = "";
         this.preloadProject = false;
+        this.statusTimeout = -1;
         this.title = "Create Project";
         this._zoomLevel = 1;
         this.previousZoom = 1;
@@ -916,12 +964,23 @@ var CreateProjectPage = (function () {
         this.idCounter = 0;
         this.conIdCounter = 0;
         this.connections = [];
+        this.lastOutputBoxHeight = 100;
+        this.lastCompilerSocketPort = 7654;
+        this.lastCompilerSocketPid = -1;
+        this.lastRunSocketPort = 7655;
+        this.lastRunSocketPid = -1;
+        this.compiling = false;
         this.suggestSchemaPropList = [];
         this.suggestSchemaArgs = [];
         //event flags
         this.dragMode = false;
         this.dragging = false;
         this.connectMode = false;
+        this.appRunning = false;
+        this.appDeploying = false;
+        this.runSocketConnected = false;
+        this.sparkRunning = false;
+        this.hadoopRunning = false;
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this._this_ = this;
         var _this_ = this;
@@ -934,10 +993,19 @@ var CreateProjectPage = (function () {
             _this_.saSetup();
             CreateProjectPage.__LOAD_ONCE_EDITOR = false;
             $("#componentsBox .divider").mousedown(function (e) {
-                _this_.startResize(e);
+                _this_.startResize(e, 0);
             });
-            $("#componentsBox .divider").mouseup(function (e) {
+            $("#outputBox .divider").mousedown(function (e) {
+                _this_.startResize(e, 1);
+            });
+            $("body").mouseup(function (e) {
                 $("body").off('mousemove');
+            });
+            _this_.hideTerminal();
+            _this_.getProjectStatus(_this_.projectName, _this_);
+            commons.getStatus(function (data) {
+                _this_.sparkRunning = data.services.spark.status;
+                _this_.hadoopRunning = data.services.spark.status;
             });
         }, 1000);
     }
@@ -949,6 +1017,10 @@ var CreateProjectPage = (function () {
             // In a real app: dispatch action to load the details here.
         });
     };
+    CreateProjectPage.prototype.ngOnDestroy = function () {
+        console.log(this.statusTimeout);
+        clearTimeout(this.statusTimeout);
+    };
     //load plugins
     CreateProjectPage.prototype.loadPlugins = function () {
         var _this_ = this;
@@ -957,7 +1029,32 @@ var CreateProjectPage = (function () {
     };
     CreateProjectPage.prototype.saInit = function () {
     };
-    CreateProjectPage.prototype.startResize = function (e) {
+    CreateProjectPage.prototype.hideTerminal = function () {
+        $("#outputBox").css("height", 35 + "px");
+        $("#drawBox").css("height", ($(".canvas-area").height() - 35) + "px");
+    };
+    CreateProjectPage.prototype.showTerminal = function (height, forceShow) {
+        if (forceShow) {
+            if (this.lastOutputBoxHeight > height) {
+                height = this.lastOutputBoxHeight;
+            }
+            $("#outputBox").css("height", height + "px");
+            $("#drawBox").css("height", ($(".canvas-area").height() - height) + "px");
+            return;
+        }
+        if ($("#outputBox").height() > 35) {
+            this.lastOutputBoxHeight = $("#outputBox").height();
+            this.hideTerminal();
+        }
+        else {
+            if (this.lastOutputBoxHeight > height) {
+                height = this.lastOutputBoxHeight;
+            }
+            $("#outputBox").css("height", height + "px");
+            $("#drawBox").css("height", ($(".canvas-area").height() - height) + "px");
+        }
+    };
+    CreateProjectPage.prototype.startResize = function (e, dir) {
         //text selection fix
         if (document.selection) {
             document.selection.empty();
@@ -966,11 +1063,41 @@ var CreateProjectPage = (function () {
             window.getSelection().removeAllRanges();
         }
         $("body").mousemove(function (ev) {
-            var l = parseInt($("body").width()) - ev.pageX - 3;
-            $("#componentsBox").css("right", l + "px");
-            var r = parseInt(ev.pageX + 3);
-            $("#drawBox").css("left", r + "px");
+            if (dir == 0) {
+                var l = parseInt($("body").width()) - ev.pageX - 3;
+                $("#componentsBox").css("right", l + "px");
+                var r = parseInt(ev.pageX + 3);
+                $(".canvas-area").css("left", r + "px");
+            }
+            if (dir == 1) {
+                var l = ev.pageY - $("#drawBox").offset().top;
+                $("#drawBox").css("height", l + "px");
+                var r = $(".canvas-area").height() - $("#drawBox").height();
+                $("#outputBox").css("height", r + "px");
+                if ($("#outputBox").height() < 35) {
+                    $("#outputBox").css("height", "35px");
+                    $("#drawBox").css("height", ($(".canvas-area").height() - 35) + "px");
+                }
+                ;
+            }
         });
+    };
+    CreateProjectPage.prototype.getProjectStatus = function (name, thisvar) {
+        var _this_ = thisvar;
+        this.http.post('/api/projects/status', { name: name }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+            _this_.appRunning = p.data.running;
+            if (_this_.appRunning) {
+                thisvar.statusTimeout = setTimeout(function () { thisvar.getProjectStatus(name, thisvar); }, 1000);
+                if (!thisvar.runSocketConnected) {
+                    thisvar.runSocketConnected = true;
+                }
+            }
+            else {
+            }
+        }, function (e) {
+            commons_component_1.Commons.loaderDone(e);
+        }, function (s) { console.log(s); });
     };
     CreateProjectPage.prototype.showStage = function () {
         //        console.log(this.stage);
@@ -1382,12 +1509,63 @@ var CreateProjectPage = (function () {
             _this.preloadProject = false;
         }, function (e) { console.log(e); }, function (s) { console.log(s); });
     };
+    CreateProjectPage.prototype.appendToTerminalHTML = function (data) {
+        $("#outputBox .terminal-output").html($("#outputBox .terminal-output").html() + data + "");
+        $("#outputBox .terminal").scrollTop($("#outputBox .terminal-output").height());
+    };
+    CreateProjectPage.prototype.appendToTemrinal = function (data) {
+        $("#outputBox .terminal-output").html($("#outputBox .terminal-output").html() + commons_component_1.Commons.escapeHtml(data) + "<br/>");
+        $("#outputBox .terminal").scrollTop($("#outputBox .terminal-output").height());
+    };
+    CreateProjectPage.prototype.getTerminalOutput = function (port) {
+        if (port == "" || port == undefined)
+            return;
+        var _this_ = this;
+        var host = window.location.href.match(/^https?\:\/\/([^\/:?#]+)(?:[\/:?#]|$)/i)[1];
+        //create connection
+        var socket = new WebSocket("ws://" + host + ":" + port);
+        socket.onmessage = function (d) {
+            _this_.appendToTemrinal(d.data);
+            _this_.getProjectStatus(_this_.projectName, _this_);
+        };
+        socket.onopen = function (e) {
+            _this_.appendToTemrinal("Connecting ...");
+        };
+        socket.onclose = function (e) {
+            _this_.appendToTemrinal("Closed Connection.");
+            _this_.compiling = false;
+            _this_.killSocketProcess(port, _this_.lastCompilerSocketPid);
+        };
+        socket.onerror = function (e) {
+            _this_.appendToTemrinal("Error occured while connecting!");
+            //            _this_.killSocketProcess(_this_.lastCompilerSockerPort);
+        };
+    };
+    CreateProjectPage.prototype.killSocketProcess = function (port, pid) {
+        this.http.post('/api/projects/websocket/kill', { port: port, pid: pid }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+        }, function (e) {
+            commons_component_1.Commons.loaderDone(e);
+        }, function (s) { console.log(s); });
+    };
     CreateProjectPage.prototype.compile = function () {
+        var _this_ = this;
+        if (!this.compiling && !this.appRunning && !this.appDeploying) {
+            _this_.compiling = true;
+        }
+        else {
+            commons_component_1.Commons.toast({ content: "App seems to be under-deployment/running. Try again later!", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+        _this_.showTerminal(200, true);
         commons_component_1.Commons.loaderShow();
         this.http.post('/api/projects/compile', { name: this.projectName }, this.headers).map(function (response) { return response.json(); })
             .subscribe(function (p) {
-            if (p.output !== undefined && p.output !== null && p.output !== "") {
-                commons_component_1.Commons.loaderDone(p.output);
+            if (p.msg !== undefined && p.msg !== null && p.msg !== "") {
+                commons_component_1.Commons.loaderDone("");
+                _this_.lastCompilerSocketPort = p.data.port;
+                _this_.lastCompilerSocketPid = p.data.pid;
+                _this_.getTerminalOutput(_this_.lastCompilerSocketPort);
             }
             else if (p.error !== undefined && p.error !== null && p.error !== "") {
                 commons_component_1.Commons.loaderDone(p.error);
@@ -1400,7 +1578,49 @@ var CreateProjectPage = (function () {
         }, function (s) { console.log(s); });
     };
     CreateProjectPage.prototype.run = function () {
-        commons_component_1.Commons.toast({ content: "Can not run right now. Execution engine seems to be not responding.<br/> Try again later!", timeout: 5000, htmlAllowed: true });
+        var _this = this;
+        if (!this.sparkRunning || !this.hadoopRunning) {
+            commons_component_1.Commons.toast({ content: "Can not run right now. Execution engine seems to be not running / responding.<br/> Try again later!", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+        var _this_ = this;
+        if (!this.appRunning) {
+        }
+        else {
+            commons_component_1.Commons.toast({ content: "The project seems to be already running.", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+        if (!this.appDeploying) {
+            this.appDeploying = true;
+            _this_.appRunning = true;
+        }
+        else {
+            commons_component_1.Commons.toast({ content: "Please wait for project deployment.", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+        _this_.showTerminal(200, true);
+        commons_component_1.Commons.loaderShow();
+        this.http.post('/api/projects/run', { name: this.projectName }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+            if (p.msg !== undefined && p.msg !== null && p.msg !== "") {
+                commons_component_1.Commons.loaderDone("");
+                _this_.lastRunSocketPort = p.data.port;
+                _this_.lastRunSocketPid = p.data.pid;
+                commons_component_1.Commons.setCookie(_this.projectName, _this_.lastRunSocketPort);
+                //                    _this_.getTerminalOutput(_this_.lastRunSocketPort);
+                _this_.appendToTerminalHTML("<b>Application has been deployed. Please visit live visualization page.</b><br/>");
+                _this_.appendToTerminalHTML("<a href=\"/report/" + _this_.projectName + "\">Click Here</a>");
+                setTimeout(function () { _this_.appDeploying = false; _this_.getProjectStatus(_this_.projectName, _this_); }, 4000);
+            }
+            else if (p.error !== undefined && p.error !== null && p.error !== "") {
+                commons_component_1.Commons.loaderDone(p.error);
+            }
+            else {
+                commons_component_1.Commons.loaderDone(p.msg);
+            }
+        }, function (e) {
+            commons_component_1.Commons.loaderDone(e);
+        }, function (s) { console.log(s); });
     };
     CreateProjectPage.prototype.findItem = function (arr, attr, val) {
         var attrs = attr.split('.');
@@ -1434,10 +1654,10 @@ var CreateProjectPage = (function () {
     CreateProjectPage = __decorate([
         core_1.Component({
             templateUrl: 'app/project/create-project.component.html',
-            providers: [http_1.HTTP_PROVIDERS],
+            providers: [http_1.HTTP_PROVIDERS, commons_component_1.Commons],
             pipes: [commons_component_1.FilterPluginsPipe]
         }), 
-        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute])
+        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute, commons_component_1.Commons])
     ], CreateProjectPage);
     return CreateProjectPage;
 }());
@@ -1578,9 +1798,11 @@ var ReportPage = (function () {
             }
         ];
         this.lineChartType = "line";
-        this.oldCount = { default: 0 };
+        this.oldCount = [0];
         this.lcc = [0];
-        this.runOnce = { default: true };
+        this.runOnce = [true];
+        this.reportChartMap = {};
+        this.intervalCounter = -1;
         var _this_ = this;
         if (this.projectName == undefined) {
             var uri = window.location.href.split["/"];
@@ -1594,7 +1816,7 @@ var ReportPage = (function () {
             _this_.loadedCharts = true;
             console.log(_this_.chartsRef);
         }, 500);
-        setInterval(function () {
+        this.intervalCounter = setInterval(function () {
             if (_this_.loadedCharts)
                 _this_.updateFunction();
         }, 1000);
@@ -1606,6 +1828,9 @@ var ReportPage = (function () {
             // In a real app: dispatch action to load the details here.
         });
     };
+    ReportPage.prototype.ngOnDestroy = function () {
+        clearInterval(this.intervalCounter);
+    };
     ReportPage.prototype.getUpdates = function () {
         //fetch projects 
         var _this_ = this;
@@ -1615,22 +1840,26 @@ var ReportPage = (function () {
                 //add one chartline per report
                 if (_this_.lineChartData.length != dd.length) {
                     //mismatch found add more lines
-                    var diff = dd.length - _this_.lineChartData.length;
-                    console.log(diff);
-                    //                        
-                    for (var ii = 0; ii < diff; ii++) {
-                        _this_.lineChartData.push({ data: [0], label: '' });
-                        _this_.lineChartLabels.push("");
+                    for (var ii = 0; ii < dd.length; ii++) {
+                        if (ii > 0)
+                            _this_.lineChartData.push({ data: [0], label: '' });
                         var d = JSON.parse(dd[ii]);
-                        _this_.runOnce[d.report] = 0;
-                        _this_.oldCount[d.report] = true;
+                        _this_.reportChartMap[d.report] = ii;
+                        _this_.runOnce[ii] = true;
+                        _this_.oldCount[ii] = 0;
                     }
-                    return;
+                }
+                else if (_this_.runOnce[0]) {
+                    var d = JSON.parse(dd[0]);
+                    _this_.reportChartMap[d.report] = 0;
+                    _this_.runOnce[0] = true;
+                    _this_.oldCount[0] = 0;
                 }
                 for (var i = 0; i < dd.length; i++) {
+                    console.log(dd[i]);
                     var d = JSON.parse(dd[i]);
                     console.log(d);
-                    _this_.updateChartsData(i, d);
+                    _this_.updateChartsData(_this_, d);
                 }
             }
         }, function (e) {
@@ -1639,21 +1868,27 @@ var ReportPage = (function () {
             console.log("Fetched Projects!");
         });
     };
-    ReportPage.prototype.updateChartsData = function (i, d) {
+    ReportPage.prototype.updateChartsData = function (_this_, d) {
+        var _this_ = _this_;
         var nc = 0;
-        var _this_ = this;
-        if (_this_.runOnce[d.report]) {
-            _this_.oldCount[d.report] = d.data.count;
-            _this_.runOnce[d.report] = false;
+        var i = _this_.reportChartMap[d.report];
+        console.log("updating for : " + d.report + " [" + i + "]");
+        console.log(_this_.runOnce[i] + " and " + _this_.oldCount[i]);
+        if (_this_.runOnce[i]) {
+            console.log("running Once");
+            _this_.oldCount[i] = d.data.count;
+            _this_.runOnce[i] = false;
         }
         else {
-            if (_this_.oldCount[d.report] != d.data.count) {
-                nc = d.data.count - _this_.oldCount[d.report];
+            console.log("again ...");
+            if (_this_.oldCount[i] != d.data.count) {
+                nc = d.data.count - _this_.oldCount[i];
             }
             else {
                 nc = 0;
             }
         }
+        console.log(nc);
         _this_.appendVal(_this_.lineChartData[i].data, nc);
         if (i == 0)
             _this_.appendVal(_this_.lineChartLabels, d.data.date);

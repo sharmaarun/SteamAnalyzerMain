@@ -1,0 +1,3 @@
+Mon, 05 Jun 2017 08:11:08 -0400 | INFO   | server     |  | Serving using application   : /bin/pwd 
+Mon, 05 Jun 2017 08:11:08 -0400 | INFO   | server     |  | Starting WebSocket server   : ws://ubuntu:7654/
+Mon, 05 Jun 2017 08:11:08 -0400 | FATAL  | server     |  | Can't start server: listen tcp :7654: bind: address already in use

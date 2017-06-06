@@ -74,6 +74,7 @@ var ReportPage = (function () {
         this.lcc = [0];
         this.runOnce = [true];
         this.reportChartMap = {};
+        this.intervalCounter = -1;
         var _this_ = this;
         if (this.projectName == undefined) {
             var uri = window.location.href.split["/"];
@@ -87,7 +88,7 @@ var ReportPage = (function () {
             _this_.loadedCharts = true;
             console.log(_this_.chartsRef);
         }, 500);
-        setInterval(function () {
+        this.intervalCounter = setInterval(function () {
             if (_this_.loadedCharts)
                 _this_.updateFunction();
         }, 1000);
@@ -98,6 +99,9 @@ var ReportPage = (function () {
             _this.projectName = params['name']; // (+) converts string 'id' to a number
             // In a real app: dispatch action to load the details here.
         });
+    };
+    ReportPage.prototype.ngOnDestroy = function () {
+        clearInterval(this.intervalCounter);
     };
     ReportPage.prototype.getUpdates = function () {
         //fetch projects 

@@ -35,6 +35,9 @@ export class ReportPage {
             // In a real app: dispatch action to load the details here.
         });
     }
+    ngOnDestroy() {
+        clearInterval(this.intervalCounter);
+    }
 
     public projectName = "";
     public chartsRef = {};
@@ -81,6 +84,7 @@ export class ReportPage {
     public lcc = [0];
     public runOnce = [true];
     public reportChartMap = {};
+    intervalCounter = -1;
     public constructor(public http: Http, public route: ActivatedRoute) {
         var _this_ = this;
         if (this.projectName == undefined) {
@@ -96,7 +100,7 @@ export class ReportPage {
             console.log(_this_.chartsRef);
 
         }, 500);
-        setInterval(function() {
+        this.intervalCounter = setInterval(function() {
             if (_this_.loadedCharts)
                 _this_.updateFunction();
 

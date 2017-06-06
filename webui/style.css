@@ -65,13 +65,79 @@ body {
     z-index: 1001;
     background: rgba(255, 104, 56, 0.49);
     bottom: 40px; }
-  body #drawBox {
+  body .status-bar-custom {
+    margin-top: 12px;
+    margin-right: 32px;
+    background: #ff5722;
+    padding: 5px;
+    border-radius: 5px;
+    float: right;
+    color: #ffa88c; }
+  body .canvas-area {
     position: absolute;
     bottom: 10px;
     left: 15%;
     right: 10px;
     top: 112px;
     height: auto !important; }
+  body #drawBox {
+    /*        position:absolute;
+            bottom:10px;
+            left:15%;
+            right:10px;
+            top:112px;
+            height:auto !important;*/
+    float: left;
+    display: inline-block;
+    width: 100%;
+    height: 70%; }
+  body #outputBox {
+    float: left;
+    width: 100%;
+    height: 30%; }
+    body #outputBox .divider {
+      width: 100%;
+      background: #ff6838;
+      height: 5px;
+      position: absolute;
+      cursor: n-resize; }
+    body #outputBox .divider:hover {
+      background: #fff; }
+    body #outputBox .header-bar {
+      background: #606985;
+      color: #8f99b7;
+      padding: 5px;
+      /* float: left; */
+      display: inline-block;
+      height: 30px;
+      width: 100%;
+      position: absolute;
+      z-index: 1;
+      margin-top: 5px;
+      cursor: pointer; }
+    body #outputBox .header-bar:hover {
+      background: #717a96; }
+    body #outputBox .terminal {
+      float: left;
+      width: 100%;
+      height: 100%;
+      background: #313749;
+      color: white;
+      overflow-y: auto;
+      font-size: 10px;
+      font-family: monospace;
+      padding-top: 32px; }
+    body #outputBox .terminal::-webkit-scrollbar-track {
+      -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      background-color: #F5F5F5; }
+    body #outputBox .terminal::-webkit-scrollbar {
+      width: 12px;
+      background-color: #F5F5F5; }
+    body #outputBox .terminal::-webkit-scrollbar-thumb {
+      border-radius: 10px;
+      -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+      background-color: #FF6838; }
   body #drawBox::-webkit-scrollbar-track {
     -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
     border-radius: 10px;

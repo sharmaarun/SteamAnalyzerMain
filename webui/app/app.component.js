@@ -39,7 +39,7 @@ var AppComponent = (function () {
         }
     }
     AppComponent.prototype.logout = function () {
-        document.cookie = "";
+        document.cookie = "loggedin=false";
         window.location.reload();
     };
     AppComponent = __decorate([

@@ -22,6 +22,12 @@
                         </a>
 
                     </li>
+                    <li *ngIf="appRunning" class="status-bar-custom" style="background:yellowgreen;color:white;">
+                        Status : Running
+                    </li>
+                    <li *ngIf="!appRunning" class="status-bar-custom">
+                        Status : Stopped
+                    </li>
                     <!--                    <li class="dropdown">
                                             <a href="javascrit:void(0)"  class="dropdown-toggle" data-toggle="dropdown">Components
                                                 <b class="caret"></b></a>
@@ -109,7 +115,21 @@
                 <i class="material-icons">zoom_out</i>
             </button>
         </div>
-        <div  id="drawBox"></div>
+        <div class="canvas-area">
+            <div  id="drawBox"></div>
+            <div id="outputBox">
+                <div class="divider"></div>
+                <div class="header-bar" (click)="showTerminal(100,false)">Output</div>
+                <div class="terminal">
+                    <div class="spacer">
+                        <br/>#TERMINAL OUTPUT
+                    </div>
+                    <div class="terminal-output">
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
 
 
         <div class="modal fade" id="propertiesEditor" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">

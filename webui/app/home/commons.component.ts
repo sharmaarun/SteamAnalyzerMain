@@ -15,13 +15,35 @@
  */
 
 
-import { Injectable, Pipe, PipeTransform } from '@angular/core';
+import { Inject, Injectable, Pipe, PipeTransform } from '@angular/core';
+import {Http, Response, Headers, RequestOptions} from "@angular/http";
 
 @Injectable()
 export class Commons {
-
+    
+    headers = new Headers({"Content-Type":"application/json"});
+    constructor(private http: Http) {
+        console.log(http);
+        this.http = http;
+    }
     public static loaderTimer = -1;
+    public static entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
 
+    public static escapeHtml(string) {
+        var _this_ = this;
+        return String(string).replace(/[&<>"'`=\/]/g, function(s) {
+            return " ";
+        });
+    }
 
     public static getUUID() {
         var d = new Date().getTime();
@@ -31,6 +53,24 @@ export class Commons {
             return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
         return uuid;
+    }
+    
+    //cookies
+    public static getCookie(key) {
+        var cookies = document.cookie.split(";");
+        
+        var obj = {};
+        for(let c of cookies) {
+            var k = c.split("=")[0]==undefined?"":c.split("=")[0].trim();
+            var v = c.split("=")[1]==undefined?"":c.split("=")[1].trim();
+            obj[k]=v;
+        }
+        console.log(obj);
+        return obj[key];
+    }
+    
+    public static setCookie(key,val) {
+        document.cookie = key+"="+val;
     }
 
     public static loaderShow() {
@@ -109,6 +149,25 @@ export class Commons {
         if (enu.hasOwnProperty(str)) return enu[str];
         else return 0;
     }
+    
+    public getStatus(cb) {
+        var _this_ = this;
+        Commons.loaderShow();
+        var action;
+        _this_.http.get('/api/dash/services/status', this.headers).map(res => res.json()).subscribe(
+            d => {
+                Commons.loaderDone("");
+                action =Commons.toast({ content: "Loaded Status.", timeout:1000});
+                cb(d.payload);
+            }, e => {
+                Commons.loaderDone("");
+                console.log("");
+            }, s => {
+                Commons.loaderDone("");
+                console.log("Fetched Projects!");
+            }
+        );
+    }
 
 
 }
@@ -172,26 +231,26 @@ export enum STAGE_TYPES {
 
 
 
-var mouseDown=false,mouseUp=true;
+var mouseDown = false, mouseUp = true;
 //initialize mouse capture
 document.body.onmousedown = function() {
-    mouseDown=true;
-    mouseUp=false;
+    mouseDown = true;
+    mouseUp = false;
 }
 document.body.onmouseup = function() {
-    mouseDown=false;
-    mouseUp=true;
+    mouseDown = false;
+    mouseUp = true;
 }
 //mouse class
 
 export class MouseManager {
-    
-    
-    
+
+
+
     public static isMouseDown() {
         return mouseDown;
     }
-    
+
     public static isMouseUp() {
         return mouseUp;
     }

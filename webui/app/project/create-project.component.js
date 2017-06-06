@@ -28,11 +28,12 @@ var http_1 = require("@angular/http");
 var router_1 = require('@angular/router');
 var commons_component_1 = require('../home/commons.component');
 var CreateProjectPage = (function () {
-    function CreateProjectPage(_http, route) {
+    function CreateProjectPage(_http, route, commons) {
         this._http = _http;
         this.route = route;
         this.projectName = "";
         this.preloadProject = false;
+        this.statusTimeout = -1;
         this.title = "Create Project";
         this._zoomLevel = 1;
         this.previousZoom = 1;
@@ -51,12 +52,23 @@ var CreateProjectPage = (function () {
         this.idCounter = 0;
         this.conIdCounter = 0;
         this.connections = [];
+        this.lastOutputBoxHeight = 100;
+        this.lastCompilerSocketPort = 7654;
+        this.lastCompilerSocketPid = -1;
+        this.lastRunSocketPort = 7655;
+        this.lastRunSocketPid = -1;
+        this.compiling = false;
         this.suggestSchemaPropList = [];
         this.suggestSchemaArgs = [];
         //event flags
         this.dragMode = false;
         this.dragging = false;
         this.connectMode = false;
+        this.appRunning = false;
+        this.appDeploying = false;
+        this.runSocketConnected = false;
+        this.sparkRunning = false;
+        this.hadoopRunning = false;
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this._this_ = this;
         var _this_ = this;
@@ -69,10 +81,19 @@ var CreateProjectPage = (function () {
             _this_.saSetup();
             CreateProjectPage.__LOAD_ONCE_EDITOR = false;
             $("#componentsBox .divider").mousedown(function (e) {
-                _this_.startResize(e);
+                _this_.startResize(e, 0);
             });
-            $("#componentsBox .divider").mouseup(function (e) {
+            $("#outputBox .divider").mousedown(function (e) {
+                _this_.startResize(e, 1);
+            });
+            $("body").mouseup(function (e) {
                 $("body").off('mousemove');
+            });
+            _this_.hideTerminal();
+            _this_.getProjectStatus(_this_.projectName, _this_);
+            commons.getStatus(function (data) {
+                _this_.sparkRunning = data.services.spark.status;
+                _this_.hadoopRunning = data.services.spark.status;
             });
         }, 1000);
     }
@@ -84,6 +105,10 @@ var CreateProjectPage = (function () {
             // In a real app: dispatch action to load the details here.
         });
     };
+    CreateProjectPage.prototype.ngOnDestroy = function () {
+        console.log(this.statusTimeout);
+        clearTimeout(this.statusTimeout);
+    };
     //load plugins
     CreateProjectPage.prototype.loadPlugins = function () {
         var _this_ = this;
@@ -92,7 +117,32 @@ var CreateProjectPage = (function () {
     };
     CreateProjectPage.prototype.saInit = function () {
     };
-    CreateProjectPage.prototype.startResize = function (e) {
+    CreateProjectPage.prototype.hideTerminal = function () {
+        $("#outputBox").css("height", 35 + "px");
+        $("#drawBox").css("height", ($(".canvas-area").height() - 35) + "px");
+    };
+    CreateProjectPage.prototype.showTerminal = function (height, forceShow) {
+        if (forceShow) {
+            if (this.lastOutputBoxHeight > height) {
+                height = this.lastOutputBoxHeight;
+            }
+            $("#outputBox").css("height", height + "px");
+            $("#drawBox").css("height", ($(".canvas-area").height() - height) + "px");
+            return;
+        }
+        if ($("#outputBox").height() > 35) {
+            this.lastOutputBoxHeight = $("#outputBox").height();
+            this.hideTerminal();
+        }
+        else {
+            if (this.lastOutputBoxHeight > height) {
+                height = this.lastOutputBoxHeight;
+            }
+            $("#outputBox").css("height", height + "px");
+            $("#drawBox").css("height", ($(".canvas-area").height() - height) + "px");
+        }
+    };
+    CreateProjectPage.prototype.startResize = function (e, dir) {
         //text selection fix
         if (document.selection) {
             document.selection.empty();
@@ -101,11 +151,41 @@ var CreateProjectPage = (function () {
             window.getSelection().removeAllRanges();
         }
         $("body").mousemove(function (ev) {
-            var l = parseInt($("body").width()) - ev.pageX - 3;
-            $("#componentsBox").css("right", l + "px");
-            var r = parseInt(ev.pageX + 3);
-            $("#drawBox").css("left", r + "px");
+            if (dir == 0) {
+                var l = parseInt($("body").width()) - ev.pageX - 3;
+                $("#componentsBox").css("right", l + "px");
+                var r = parseInt(ev.pageX + 3);
+                $(".canvas-area").css("left", r + "px");
+            }
+            if (dir == 1) {
+                var l = ev.pageY - $("#drawBox").offset().top;
+                $("#drawBox").css("height", l + "px");
+                var r = $(".canvas-area").height() - $("#drawBox").height();
+                $("#outputBox").css("height", r + "px");
+                if ($("#outputBox").height() < 35) {
+                    $("#outputBox").css("height", "35px");
+                    $("#drawBox").css("height", ($(".canvas-area").height() - 35) + "px");
+                }
+                ;
+            }
         });
+    };
+    CreateProjectPage.prototype.getProjectStatus = function (name, thisvar) {
+        var _this_ = thisvar;
+        this.http.post('/api/projects/status', { name: name }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+            _this_.appRunning = p.data.running;
+            if (_this_.appRunning) {
+                thisvar.statusTimeout = setTimeout(function () { thisvar.getProjectStatus(name, thisvar); }, 1000);
+                if (!thisvar.runSocketConnected) {
+                    thisvar.runSocketConnected = true;
+                }
+            }
+            else {
+            }
+        }, function (e) {
+            commons_component_1.Commons.loaderDone(e);
+        }, function (s) { console.log(s); });
     };
     CreateProjectPage.prototype.showStage = function () {
         //        console.log(this.stage);
@@ -517,12 +597,63 @@ var CreateProjectPage = (function () {
             _this.preloadProject = false;
         }, function (e) { console.log(e); }, function (s) { console.log(s); });
     };
+    CreateProjectPage.prototype.appendToTerminalHTML = function (data) {
+        $("#outputBox .terminal-output").html($("#outputBox .terminal-output").html() + data + "");
+        $("#outputBox .terminal").scrollTop($("#outputBox .terminal-output").height());
+    };
+    CreateProjectPage.prototype.appendToTemrinal = function (data) {
+        $("#outputBox .terminal-output").html($("#outputBox .terminal-output").html() + commons_component_1.Commons.escapeHtml(data) + "<br/>");
+        $("#outputBox .terminal").scrollTop($("#outputBox .terminal-output").height());
+    };
+    CreateProjectPage.prototype.getTerminalOutput = function (port) {
+        if (port == "" || port == undefined)
+            return;
+        var _this_ = this;
+        var host = window.location.href.match(/^https?\:\/\/([^\/:?#]+)(?:[\/:?#]|$)/i)[1];
+        //create connection
+        var socket = new WebSocket("ws://" + host + ":" + port);
+        socket.onmessage = function (d) {
+            _this_.appendToTemrinal(d.data);
+            _this_.getProjectStatus(_this_.projectName, _this_);
+        };
+        socket.onopen = function (e) {
+            _this_.appendToTemrinal("Connecting ...");
+        };
+        socket.onclose = function (e) {
+            _this_.appendToTemrinal("Closed Connection.");
+            _this_.compiling = false;
+            _this_.killSocketProcess(port, _this_.lastCompilerSocketPid);
+        };
+        socket.onerror = function (e) {
+            _this_.appendToTemrinal("Error occured while connecting!");
+            //            _this_.killSocketProcess(_this_.lastCompilerSockerPort);
+        };
+    };
+    CreateProjectPage.prototype.killSocketProcess = function (port, pid) {
+        this.http.post('/api/projects/websocket/kill', { port: port, pid: pid }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+        }, function (e) {
+            commons_component_1.Commons.loaderDone(e);
+        }, function (s) { console.log(s); });
+    };
     CreateProjectPage.prototype.compile = function () {
+        var _this_ = this;
+        if (!this.compiling && !this.appRunning && !this.appDeploying) {
+            _this_.compiling = true;
+        }
+        else {
+            commons_component_1.Commons.toast({ content: "App seems to be under-deployment/running. Try again later!", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+        _this_.showTerminal(200, true);
         commons_component_1.Commons.loaderShow();
         this.http.post('/api/projects/compile', { name: this.projectName }, this.headers).map(function (response) { return response.json(); })
             .subscribe(function (p) {
-            if (p.output !== undefined && p.output !== null && p.output !== "") {
-                commons_component_1.Commons.loaderDone(p.output);
+            if (p.msg !== undefined && p.msg !== null && p.msg !== "") {
+                commons_component_1.Commons.loaderDone("");
+                _this_.lastCompilerSocketPort = p.data.port;
+                _this_.lastCompilerSocketPid = p.data.pid;
+                _this_.getTerminalOutput(_this_.lastCompilerSocketPort);
             }
             else if (p.error !== undefined && p.error !== null && p.error !== "") {
                 commons_component_1.Commons.loaderDone(p.error);
@@ -535,7 +666,49 @@ var CreateProjectPage = (function () {
         }, function (s) { console.log(s); });
     };
     CreateProjectPage.prototype.run = function () {
-        commons_component_1.Commons.toast({ content: "Can not run right now. Execution engine seems to be not responding.<br/> Try again later!", timeout: 5000, htmlAllowed: true });
+        var _this = this;
+        if (!this.sparkRunning || !this.hadoopRunning) {
+            commons_component_1.Commons.toast({ content: "Can not run right now. Execution engine seems to be not running / responding.<br/> Try again later!", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+        var _this_ = this;
+        if (!this.appRunning) {
+        }
+        else {
+            commons_component_1.Commons.toast({ content: "The project seems to be already running.", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+        if (!this.appDeploying) {
+            this.appDeploying = true;
+            _this_.appRunning = true;
+        }
+        else {
+            commons_component_1.Commons.toast({ content: "Please wait for project deployment.", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+        _this_.showTerminal(200, true);
+        commons_component_1.Commons.loaderShow();
+        this.http.post('/api/projects/run', { name: this.projectName }, this.headers).map(function (response) { return response.json(); })
+            .subscribe(function (p) {
+            if (p.msg !== undefined && p.msg !== null && p.msg !== "") {
+                commons_component_1.Commons.loaderDone("");
+                _this_.lastRunSocketPort = p.data.port;
+                _this_.lastRunSocketPid = p.data.pid;
+                commons_component_1.Commons.setCookie(_this.projectName, _this_.lastRunSocketPort);
+                //                    _this_.getTerminalOutput(_this_.lastRunSocketPort);
+                _this_.appendToTerminalHTML("<b>Application has been deployed. Please visit live visualization page.</b><br/>");
+                _this_.appendToTerminalHTML("<a href=\"/report/" + _this_.projectName + "\">Click Here</a>");
+                setTimeout(function () { _this_.appDeploying = false; _this_.getProjectStatus(_this_.projectName, _this_); }, 4000);
+            }
+            else if (p.error !== undefined && p.error !== null && p.error !== "") {
+                commons_component_1.Commons.loaderDone(p.error);
+            }
+            else {
+                commons_component_1.Commons.loaderDone(p.msg);
+            }
+        }, function (e) {
+            commons_component_1.Commons.loaderDone(e);
+        }, function (s) { console.log(s); });
     };
     CreateProjectPage.prototype.findItem = function (arr, attr, val) {
         var attrs = attr.split('.');
@@ -569,10 +742,10 @@ var CreateProjectPage = (function () {
     CreateProjectPage = __decorate([
         core_1.Component({
             templateUrl: 'app/project/create-project.component.html',
-            providers: [http_1.HTTP_PROVIDERS],
+            providers: [http_1.HTTP_PROVIDERS, commons_component_1.Commons],
             pipes: [commons_component_1.FilterPluginsPipe]
         }), 
-        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute])
+        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute, commons_component_1.Commons])
     ], CreateProjectPage);
     return CreateProjectPage;
 }());

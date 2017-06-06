@@ -23,7 +23,7 @@ import {Commons, STAGE_TYPES, FilterPluginsPipe, MouseManager} from '../home/com
 
 @Component({
     templateUrl: 'app/project/create-project.component.html',
-    providers: [HTTP_PROVIDERS],
+    providers: [HTTP_PROVIDERS, Commons],
     pipes: [FilterPluginsPipe]
 })
 
@@ -36,8 +36,13 @@ export class CreateProjectPage {
             // In a real app: dispatch action to load the details here.
         });
     }
+    ngOnDestroy() {
+        console.log(this.statusTimeout);
+        clearTimeout(this.statusTimeout);
+    }
     projectName = "";
     preloadProject = false;
+    statusTimeout = -1;
     title = "Create Project";
     saLinker;
     saPixi;
@@ -73,6 +78,13 @@ export class CreateProjectPage {
     _tmpConnection;
     _selectedHole;
 
+    lastOutputBoxHeight = 100;
+    lastCompilerSocketPort = 7654;
+    lastCompilerSocketPid = -1;
+    lastRunSocketPort = 7655;
+    lastRunSocketPid = -1;
+    compiling = false;
+
     public suggestSchemaPropList = [], suggestSchemaArgs = [];
 
     //event flags
@@ -80,11 +92,17 @@ export class CreateProjectPage {
     dragging = false;
     connectMode = false;
 
+    appRunning = false;
+    appDeploying = false;
+    runSocketConnected = false;
+    sparkRunning = false;
+    hadoopRunning = false;
+
     public _this_;
     public headers = new Headers({ 'Content-Type': 'application/json' });
     http;
 
-    public constructor(public _http: Http, public route: ActivatedRoute) {
+    public constructor(public _http: Http, public route: ActivatedRoute, commons: Commons) {
         this._this_ = this;
         var _this_ = this;
         this.http = this._http;
@@ -98,13 +116,23 @@ export class CreateProjectPage {
             _this_.saSetup();
             CreateProjectPage.__LOAD_ONCE_EDITOR = false;
             $("#componentsBox .divider").mousedown(function(e) {
-                _this_.startResize(e);
-            });
-            $("#componentsBox .divider").mouseup(function(e) {
-                $("body").off('mousemove');
+                _this_.startResize(e, 0);
             });
 
+            $("#outputBox .divider").mousedown(function(e) {
+                _this_.startResize(e, 1);
+            });
+            $("body").mouseup(function(e) {
+                $("body").off('mousemove');
+            });
+            _this_.hideTerminal();
+            _this_.getProjectStatus(_this_.projectName, _this_);
+            commons.getStatus(function(data) {
+                _this_.sparkRunning = data.services.spark.status;
+                _this_.hadoopRunning = data.services.spark.status;
+            });
         }, 1000);
+
 
 
 
@@ -124,8 +152,33 @@ export class CreateProjectPage {
 
     }
 
+    public hideTerminal() {
+        $("#outputBox").css("height", 35 + "px");
+        $("#drawBox").css("height", ($(".canvas-area").height() - 35) + "px");
+    }
 
-    public startResize(e) {
+    public showTerminal(height, forceShow) {
+        if (forceShow) {
+            if (this.lastOutputBoxHeight > height) {
+                height = this.lastOutputBoxHeight;
+            }
+            $("#outputBox").css("height", height + "px");
+            $("#drawBox").css("height", ($(".canvas-area").height() - height) + "px");
+            return;
+        }
+        if ($("#outputBox").height() > 35) {
+            this.lastOutputBoxHeight = $("#outputBox").height();
+            this.hideTerminal();
+        } else {
+            if (this.lastOutputBoxHeight > height) {
+                height = this.lastOutputBoxHeight;
+            }
+            $("#outputBox").css("height", height + "px");
+            $("#drawBox").css("height", ($(".canvas-area").height() - height) + "px");
+        }
+    }
+
+    public startResize(e, dir) {
         //text selection fix
         if (document.selection) {
             document.selection.empty();
@@ -133,10 +186,23 @@ export class CreateProjectPage {
             window.getSelection().removeAllRanges();
         }
         $("body").mousemove(function(ev) {
-            var l = parseInt($("body").width()) - ev.pageX - 3;
-            $("#componentsBox").css("right", l + "px");
-            var r = parseInt(ev.pageX + 3);
-            $("#drawBox").css("left", r + "px");
+            if (dir == 0) {
+                var l = parseInt($("body").width()) - ev.pageX - 3;
+                $("#componentsBox").css("right", l + "px");
+                var r = parseInt(ev.pageX + 3);
+                $(".canvas-area").css("left", r + "px");
+            }
+            if (dir == 1) {
+
+                var l = ev.pageY - $("#drawBox").offset().top;
+                $("#drawBox").css("height", l + "px");
+                var r = $(".canvas-area").height() - $("#drawBox").height();
+                $("#outputBox").css("height", r + "px");
+                if ($("#outputBox").height() < 35) {
+                    $("#outputBox").css("height", "35px");
+                    $("#drawBox").css("height", ($(".canvas-area").height() - 35) + "px");
+                };
+            }
         });
 
 
@@ -144,8 +210,26 @@ export class CreateProjectPage {
 
     }
 
+    public getProjectStatus(name, thisvar) {
+        var _this_ = thisvar;
+        this.http.post('/api/projects/status', { name: name }, this.headers).map(response => response.json())
+            .subscribe(p => {
+                _this_.appRunning = p.data.running;
+                if (_this_.appRunning) {
+                    thisvar.statusTimeout = setTimeout(function() { thisvar.getProjectStatus(name, thisvar) }, 1000);
+                    if (!thisvar.runSocketConnected) {
+                        thisvar.runSocketConnected = true;
+//                        thisvar.getTerminalOutput(Commons.getCookie(name));
+                    }
+                } else {
+                }
+            }, e => {
+                Commons.loaderDone(e);
+            }, s => { console.log(s); });
+    }
+
     public showStage() {
-//        console.log(this.stage);
+        //        console.log(this.stage);
     }
 
     public saSetup() {
@@ -170,14 +254,14 @@ export class CreateProjectPage {
         val = val.split(",")[val.split(",").length - 1].trim();
         var args = Commons.clone(_this_.suggestSchemaPropList);
         var tmpArr = [];
-        for(let a of Object.keys(args)) {
-            var arr = args[a].values==undefined?[]:args[a].values;
-            for(let it of arr){
-                if(it.indexOf(val)!==-1) {
-                    tmpArr.push({from:args[a].stage,value:it});
+        for (let a of Object.keys(args)) {
+            var arr = args[a].values == undefined ? [] : args[a].values;
+            for (let it of arr) {
+                if (it.indexOf(val) !== -1) {
+                    tmpArr.push({ from: args[a].stage, value: it });
                 }
             }
-//            tmpArr = tmpArr.concat(arr);
+            //            tmpArr = tmpArr.concat(arr);
         }
         _this_.suggestSchemaArgs = tmpArr;
 
@@ -207,7 +291,7 @@ export class CreateProjectPage {
     //Adds plugin as component to the canvas area
     public addObject(plug) {
         var plugin = Commons.clone(plug);
-//        console.log(plugin);
+        //        console.log(plugin);
         //increment the id counter
         this.idCounter += 1;
         //1. create node object
@@ -233,8 +317,8 @@ export class CreateProjectPage {
     //{type, x location, y location}
     public createNode(stage) {
         var _this_ = this;
-//        console.log("adding node");
-//        console.log(stage);
+        //        console.log("adding node");
+        //        console.log(stage);
         let o = {
             id: this.idCounter,
             type: STAGE_TYPES.UNDEFINED_STAGE,
@@ -266,12 +350,12 @@ export class CreateProjectPage {
         for (let po of o.plugin.outputs == undefined ? [] : o.plugin.outputs) {
             connectorOut = node.output(po.id, po.name);
             connectorOut.beforeRemove = function(index) {
-//                console.log(this);
+                //                console.log(this);
 
                 _this_.updateConnections(this.node);
             }
             connectorOut.onConnect = function(input) {
-//                input.node.plugin.schema = Commons.clone(o.plugin.schema);
+                //                input.node.plugin.schema = Commons.clone(o.plugin.schema);
                 //                console.log(input);
             }
         }
@@ -284,8 +368,8 @@ export class CreateProjectPage {
         });
 
         //also push the schema to global schema properties suggetion list
-        if(o.plugin.schema!=undefined && o.plugin.schema.length>0)
-        _this_.suggestSchemaPropList.push({ stage: o.name, values: o.plugin.schema});
+        if (o.plugin.schema != undefined && o.plugin.schema.length > 0)
+            _this_.suggestSchemaPropList.push({ stage: o.name, values: o.plugin.schema });
 
 
 
@@ -293,7 +377,7 @@ export class CreateProjectPage {
         //event handlers
         this.attachEvents(o, node);
 
-//        console.log(node);
+        //        console.log(node);
         console.log("Created new node : " + o.name);
         return node;
     }
@@ -301,7 +385,7 @@ export class CreateProjectPage {
     private addObjectToTopology(obj) {
         var _this_ = this;
         _this_.topologyCanvas.push(obj);
-//        console.log(_this_.topologyCanvas);
+        //        console.log(_this_.topologyCanvas);
     }
 
     private removeObjectFromTopology(obj) {
@@ -310,7 +394,7 @@ export class CreateProjectPage {
             let stage = _this_.topologyCanvas[i];
 
             if (stage.id == obj.id) {
-//                console.log(stage.id + " / " + obj.id);
+                //                console.log(stage.id + " / " + obj.id);
                 _this_.topologyCanvas.splice(i, 1);
                 break;
             }
@@ -345,7 +429,7 @@ export class CreateProjectPage {
                 //search for to-endpoint id in all stages
                 let found = false;
                 let n = {};
-//                console.log(to);
+                //                console.log(to);
                 if (to.node.id != undefined && to.node.id != "" && to.node.id != null) {
                     for (let ss of this.topologyCanvas) {
                         if (ss.id == to.node.id) {
@@ -355,10 +439,10 @@ export class CreateProjectPage {
                         }
                     }
                     if (found) {
-//                        console.log("found");
-//                        console.log(ss);
+                        //                        console.log("found");
+                        //                        console.log(ss);
                         //remove the schema
-//                        ss.plugin.schema = [];
+                        //                        ss.plugin.schema = [];
                         ss.pathsIn[Object.keys(ss.pathsIn)[0]] = [];
                         //                    var arr = ss.pathsIn[Object.keys(ss.pathsIn)[0]];
 
@@ -400,7 +484,7 @@ export class CreateProjectPage {
         // remove event
         node.onRemove = function() {
             _this_.updateConnections(this);
-//            console.log(_this_.topologyCanvas);
+            //            console.log(_this_.topologyCanvas);
             _this_.removeObjectFromTopology(this);
         }
     }
@@ -432,7 +516,7 @@ export class CreateProjectPage {
     public showProperties(node) {
         let _this_ = this;
         _this_.selectedNode = node;
-//        console.log(_this_.selectedNode);
+        //        console.log(_this_.selectedNode);
         $("#propertiesEditor").modal("show");
         _this_.suggestSchemaArgs = [];
     }
@@ -479,10 +563,10 @@ export class CreateProjectPage {
             if (s.hasOwnProperty("pathsOut")) {
                 for (let p of Object.keys(s.pathsOut)) {
                     if (s.pathsOut[p].length <= 0) break;
-//                    console.log(s.pathsOut[p]);
+                    //                    console.log(s.pathsOut[p]);
                     ns.pathsOut[p] = [];
                     for (var nsi = 0; nsi < s.pathsOut[p].length; nsi++) {
-//                        console.log(s.pathsOut[p][nsi]);
+                        //                        console.log(s.pathsOut[p][nsi]);
                         var from = {
                             id: s.pathsOut[p][nsi][1]["id"],
                             name: s.pathsOut[p][nsi][1]["name"],
@@ -559,12 +643,12 @@ export class CreateProjectPage {
         for (var i = 0; i < topology.stages.length; i++) {
             var s = topology.stages[i];
             var outs = s.pathsOut[Object.keys(s.pathsOut)[0]];
-//            console.log(outs);
+            //            console.log(outs);
             var conn1, conn2;
             if (outs == undefined) continue;
             for (let path of outs) {
 
-//                console.log(path);
+                //                console.log(path);
                 //if (path.length <= 0) continue;
 
                 for (var j = 0; j < this.connections.length; j++) {
@@ -577,11 +661,11 @@ export class CreateProjectPage {
                     }
                 }
 
-//                console.log("Connecting : ");
+                //                console.log("Connecting : ");
                 if (conn1 == undefined || conn2 == undefined) continue;
-//                console.log(conn1);
-//                console.log(conn2);
-//                conn2.node.plugin.schema = Commons.clone(conn1.node.plugin.schema);
+                //                console.log(conn1);
+                //                console.log(conn2);
+                //                conn2.node.plugin.schema = Commons.clone(conn1.node.plugin.schema);
                 conn1.connect(conn2);
 
             }
@@ -609,7 +693,7 @@ export class CreateProjectPage {
         //get the project json
         this.http.post('/api/projects/json', { name: this.projectName }, this.headers).map(response => response.json())
             .subscribe(p => {
-//                console.log(p);
+                //                console.log(p);
                 this.topology = p;
                 this.topology.name = this.projectName;
                 this.preloadProject = true;
@@ -620,13 +704,70 @@ export class CreateProjectPage {
 
 
     }
+    
+    public appendToTerminalHTML(data) {
+        $("#outputBox .terminal-output").html($("#outputBox .terminal-output").html() + data + "");
+        $("#outputBox .terminal").scrollTop($("#outputBox .terminal-output").height());
+    }
+
+    public appendToTemrinal(data) {
+        $("#outputBox .terminal-output").html($("#outputBox .terminal-output").html() + Commons.escapeHtml(data) + "<br/>");
+        $("#outputBox .terminal").scrollTop($("#outputBox .terminal-output").height());
+    }
+
+    public getTerminalOutput(port) {
+        if (port == "" || port == undefined) return;
+        var _this_ = this;
+        var host = window.location.href.match(/^https?\:\/\/([^\/:?#]+)(?:[\/:?#]|$)/i)[1];
+        //create connection
+        var socket = new WebSocket("ws://" + host + ":" + port);
+        socket.onmessage = function(d) {
+            _this_.appendToTemrinal(d.data);
+            _this_.getProjectStatus(_this_.projectName,_this_);
+        }
+        socket.onopen = function(e) {
+            _this_.appendToTemrinal("Connecting ...");
+            
+        }
+        socket.onclose = function(e) {
+            _this_.appendToTemrinal("Closed Connection.");
+            _this_.compiling = false;
+            _this_.killSocketProcess(port, _this_.lastCompilerSocketPid);
+        }
+        socket.onerror = function(e) {
+            _this_.appendToTemrinal("Error occured while connecting!");
+            //            _this_.killSocketProcess(_this_.lastCompilerSockerPort);
+        }
+    }
+
+    public killSocketProcess(port, pid) {
+        this.http.post('/api/projects/websocket/kill', { port: port, pid: pid }, this.headers).map(response => response.json())
+            .subscribe(p => {
+
+            }, e => {
+                Commons.loaderDone(e);
+            }, s => { console.log(s); });
+    }
 
     public compile() {
+        var _this_ = this;
+        if (!this.compiling && !this.appRunning && !this.appDeploying) {
+            _this_.compiling = true;
+        } else {
+            Commons.toast({ content: "App seems to be under-deployment/running. Try again later!", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+        _this_.showTerminal(200, true);
         Commons.loaderShow();
         this.http.post('/api/projects/compile', { name: this.projectName }, this.headers).map(response => response.json())
             .subscribe(p => {
-                if (p.output !== undefined && p.output !== null && p.output !== "") {
-                    Commons.loaderDone(p.output);
+                if (p.msg !== undefined && p.msg !== null && p.msg !== "") {
+                    Commons.loaderDone("");
+
+                    _this_.lastCompilerSocketPort = p.data.port;
+                    _this_.lastCompilerSocketPid = p.data.pid;
+                    _this_.getTerminalOutput(_this_.lastCompilerSocketPort);
+
                 } else
                     if (p.error !== undefined && p.error !== null && p.error !== "") {
                         Commons.loaderDone(p.error);
@@ -642,7 +783,56 @@ export class CreateProjectPage {
     }
 
     public run() {
-        Commons.toast({ content: "Can not run right now. Execution engine seems to be not responding.<br/> Try again later!", timeout: 5000, htmlAllowed: true });
+        if (!this.sparkRunning || !this.hadoopRunning) {
+            Commons.toast({ content: "Can not run right now. Execution engine seems to be not running / responding.<br/> Try again later!", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+
+        var _this_ = this;
+        if (!this.appRunning) {
+            //
+        } else {
+            Commons.toast({ content: "The project seems to be already running.", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+
+        if (!this.appDeploying) {
+            this.appDeploying = true;
+            _this_.appRunning = true;
+            //
+        } else {
+            Commons.toast({ content: "Please wait for project deployment.", timeout: 5000, htmlAllowed: true });
+            return;
+        }
+        _this_.showTerminal(200, true);
+        Commons.loaderShow();
+        this.http.post('/api/projects/run', { name: this.projectName }, this.headers).map(response => response.json())
+            .subscribe(p => {
+                if (p.msg !== undefined && p.msg !== null && p.msg !== "") {
+                    Commons.loaderDone("");
+
+                    _this_.lastRunSocketPort = p.data.port;
+                    _this_.lastRunSocketPid = p.data.pid;
+                    Commons.setCookie(this.projectName, _this_.lastRunSocketPort);
+//                    _this_.getTerminalOutput(_this_.lastRunSocketPort);
+                    _this_.appendToTerminalHTML("<b>Application has been deployed. Please visit live visualization page.</b><br/>");
+                    _this_.appendToTerminalHTML("<a href=\"/report/" + _this_.projectName+"\">Click Here</a>");
+                    
+                    setTimeout(function() { _this_.appDeploying = false; _this_.getProjectStatus(_this_.projectName,_this_);},4000);
+
+                } else
+                    if (p.error !== undefined && p.error !== null && p.error !== "") {
+                        Commons.loaderDone(p.error);
+                    } else {
+                        Commons.loaderDone(p.msg);
+                    }
+
+
+            }, e => {
+                Commons.loaderDone(e);
+            }, s => { console.log(s); });
+
+
     }
 
     private findItem(arr, attr, val) {

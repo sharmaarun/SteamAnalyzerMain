@@ -41,7 +41,7 @@ export class AppComponent {
     }
     
     public logout() {
-        document.cookie="";
+        document.cookie="loggedin=false";
         window.location.reload();
     }
 }

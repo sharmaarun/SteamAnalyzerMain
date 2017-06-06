@@ -21,5 +21,8 @@ module.exports = function(passport) {
     app.post('/api/projects/json',controller.getJSON);
     app.post('/api/projects/save', controller.saveProject);
     app.post('/api/projects/compile', controller.compileProject);
+    app.post('/api/projects/run', controller.deployProject);
+    app.post('/api/projects/status', controller.status);
+    app.post('/api/projects/websocket/kill', controller.killSocket);
     
 }

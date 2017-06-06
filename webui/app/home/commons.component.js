@@ -24,9 +24,20 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
+var http_1 = require("@angular/http");
 var Commons = (function () {
-    function Commons() {
+    function Commons(http) {
+        this.http = http;
+        this.headers = new http_1.Headers({ "Content-Type": "application/json" });
+        console.log(http);
+        this.http = http;
     }
+    Commons.escapeHtml = function (string) {
+        var _this_ = this;
+        return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+            return " ";
+        });
+    };
     Commons.getUUID = function () {
         var d = new Date().getTime();
         var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -35,6 +46,22 @@ var Commons = (function () {
             return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
         return uuid;
+    };
+    //cookies
+    Commons.getCookie = function (key) {
+        var cookies = document.cookie.split(";");
+        var obj = {};
+        for (var _i = 0, cookies_1 = cookies; _i < cookies_1.length; _i++) {
+            var c = cookies_1[_i];
+            var k = c.split("=")[0] == undefined ? "" : c.split("=")[0].trim();
+            var v = c.split("=")[1] == undefined ? "" : c.split("=")[1].trim();
+            obj[k] = v;
+        }
+        console.log(obj);
+        return obj[key];
+    };
+    Commons.setCookie = function (key, val) {
+        document.cookie = key + "=" + val;
     };
     Commons.loaderShow = function () {
         console.log("in loaershow");
@@ -103,10 +130,36 @@ var Commons = (function () {
         else
             return 0;
     };
+    Commons.prototype.getStatus = function (cb) {
+        var _this_ = this;
+        Commons.loaderShow();
+        var action;
+        _this_.http.get('/api/dash/services/status', this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            Commons.loaderDone("");
+            action = Commons.toast({ content: "Loaded Status.", timeout: 1000 });
+            cb(d.payload);
+        }, function (e) {
+            Commons.loaderDone("");
+            console.log("");
+        }, function (s) {
+            Commons.loaderDone("");
+            console.log("Fetched Projects!");
+        });
+    };
     Commons.loaderTimer = -1;
+    Commons.entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
     Commons = __decorate([
         core_1.Injectable(), 
-        __metadata('design:paramtypes', [])
+        __metadata('design:paramtypes', [http_1.Http])
     ], Commons);
     return Commons;
 }());
