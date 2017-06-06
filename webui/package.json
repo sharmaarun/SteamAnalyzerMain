@@ -51,7 +51,6 @@
     "lodash-es": "^4.17.4",
     "mongoose": "^4.6.5",
     "morgan": "^1.7.0",
-    "ng2-charts": "^1.4.1",
     "node-webhdfs": "0.0.4",
     "passport": "^0.3.2",
     "properties-reader": "0.0.15",
