@@ -115,7 +115,7 @@ exports.status = function (req, res) {
 
     reqq.on('error', function (e) {
         console.log('problem with request: ' + e.message);
-        return res.status(500).send({status: "ERROR", msg: "Server Error!", data: {running: false}});
+        return res.json({status: "ERROR", msg: "Server Error!", data: {running: false}});
     });
 
     reqq.end();
