@@ -550,13 +550,26 @@ var HomeComponent = (function () {
         });
     };
     HomeComponent.prototype.login = function () {
-        if (this.fUser.email != this.user.email || this.fUser.password != this.user.password) {
-            commons_component_1.Commons.toast({ content: "Invalid Username/Password!", timeout: 5000 });
-            return;
-        }
-        this.loggedIn = true;
-        commons_component_1.Commons.setCookie("loggedin", "true");
-        window.location.reload();
+        this.http.post('/login', { username: this.fUser.email, password: this.fUser.password }, this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            if (d.status == "OK") {
+                commons_component_1.Commons.setCookie("loggedin", "true");
+                window.location.href = "/";
+            }
+            else {
+                commons_component_1.Commons.toast({ content: "Invalid Username/Password", timeout: 5000 });
+            }
+        }, function (e) {
+            commons_component_1.Commons.loaderDone("");
+            console.log("");
+            commons_component_1.Commons.toast({ content: "Invalid Username/Password", timeout: 5000 });
+        }, function (s) {
+            commons_component_1.Commons.loaderDone("");
+            console.log("Logged In");
+        });
+        //        if (this.fUser.email != this.user.email || this.fUser.password != this.user.password) {
+        //            Commons.toast({ content: "Invalid Username/Password!", timeout: 5000 });
+        //            return;
+        //        }
         return false;
     };
     HomeComponent.prototype.mapStats = function (data) {
@@ -1435,13 +1448,14 @@ var CreateProjectPage = (function () {
         var _this_ = this;
         var host = window.location.href.match(/^https?\:\/\/([^\/:?#]+)(?:[\/:?#]|$)/i)[1];
         //create connection
+        _this_.appendToTemrinal("Connecting ...");
         var socket = new WebSocket("ws://" + host + ":" + port);
         socket.onmessage = function (d) {
             _this_.appendToTemrinal(d.data);
             _this_.getProjectStatus(_this_.projectName, _this_);
         };
         socket.onopen = function (e) {
-            _this_.appendToTemrinal("Connecting ...");
+            _this_.appendToTemrinal("Connected.");
         };
         socket.onclose = function (e) {
             _this_.appendToTemrinal("Closed Connection.");
@@ -1664,13 +1678,16 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
+var platform_browser_1 = require('@angular/platform-browser');
 var http_1 = require("@angular/http");
 var router_1 = require('@angular/router');
 var ReportPage = (function () {
-    function ReportPage(http, route) {
+    function ReportPage(http, route, sanitizer) {
         this.http = http;
         this.route = route;
+        this.sanitizer = sanitizer;
         this.projectName = "";
+        this.projectJson = {};
         this.chartsRef = {};
         this.loadedCharts = false;
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
@@ -1679,6 +1696,9 @@ var ReportPage = (function () {
             var uri = window.location.href.split["/"];
             this.projectName = uri[uri.length - 1];
         }
+        setTimeout(function () {
+            _this_.getProjectJson();
+        }, 1000);
     }
     ReportPage.prototype.ngOnInit = function () {
         var _this = this;
@@ -1688,6 +1708,23 @@ var ReportPage = (function () {
         });
     };
     ReportPage.prototype.ngOnDestroy = function () {
+    };
+    ReportPage.prototype.loadUrl = function (uri) {
+        return this.sanitizer.bypassSecurityTrustResourceUrl(uri + "&rand=" + Math.round(Math.random() * 10000000));
+    };
+    ReportPage.prototype.getProjectJson = function () {
+        //fetch projects 
+        var _this_ = this;
+        console.log(_this_.projectName);
+        this.http.post('/api/projects/json', { name: _this_.projectName }, this.headers).map(function (res) { return res.json(); }).subscribe(function (dd) {
+            //add one chartline per report
+            _this_.projectJson = dd;
+            console.log(_this_.projectJson);
+        }, function (e) {
+            console.log("Cound not fetch projects list!");
+        }, function (s) {
+            console.log("Fetched Projects!");
+        });
     };
     ReportPage.prototype.getUpdates = function () {
         //fetch projects 
@@ -1717,7 +1754,7 @@ var ReportPage = (function () {
             templateUrl: 'app/reports/report.component.html',
             providers: [http_1.HTTP_PROVIDERS]
         }), 
-        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute])
+        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute, platform_browser_1.DomSanitizationService])
     ], ReportPage);
     return ReportPage;
 }());
@@ -1794,19 +1831,39 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 var core_1 = require('@angular/core');
 var router_1 = require('@angular/router');
+var http_1 = require("@angular/http");
+var commons_component_1 = require('../home/commons.component');
 var RegisterPage = (function () {
-    function RegisterPage(router) {
+    function RegisterPage(router, http) {
         this.router = router;
+        this.http = http;
         this.title = "Register";
+        this.headers = new http_1.Headers({ "Content-Type": "application/json" });
+        this.user = { username: "", password: "", fName: "", lName: "" };
     }
     RegisterPage.prototype.register = function () {
-        this.router.navigate(['/']);
+        commons_component_1.Commons.loaderShow();
+        if (this.user.username == "" || this.user.password == "" || this.user.fName == "" || this.user.lName == "") {
+            commons_component_1.Commons.loaderDone("");
+            commons_component_1.Commons.toast({ content: "Please fill all the fields!", timeout: 5000 });
+            return;
+        }
+        this.http.post('/signup', this.user, this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            console.log(d);
+            if (d.status == "OK") {
+                commons_component_1.Commons.setCookie("loggedin", "true");
+                window.location.reload();
+            }
+        }, function (e) { commons_component_1.Commons.toast({ content: "Server Error occured!", timeout: 2000 }); }, function (s) {
+            commons_component_1.Commons.toast({ content: "Registred successfully!!", timeout: 2000 });
+        });
     };
     RegisterPage = __decorate([
         core_1.Component({
-            templateUrl: 'app/user/register-page.component.html'
+            templateUrl: 'app/user/register-page.component.html',
+            providers: [http_1.HTTP_PROVIDERS, commons_component_1.Commons]
         }), 
-        __metadata('design:paramtypes', [router_1.Router])
+        __metadata('design:paramtypes', [router_1.Router, http_1.Http])
     ], RegisterPage);
     return RegisterPage;
 }());

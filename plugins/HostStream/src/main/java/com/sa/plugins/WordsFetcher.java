@@ -26,6 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.UUID;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -55,7 +56,7 @@ public class WordsFetcher implements Serializable {
             @Override
             public String call(String t1) throws Exception {
                 
-                return "{\"datetime\":\""+new Date()+"\",\"msg\":\""+t1+"\"}";
+                return "{\"id\":\""+UUID.randomUUID().toString()+"\",\"datetime\":\""+new Date()+"\",\"msg\":\""+t1.replaceAll("[^a-zA-Z0-9_\\s\\.,]", "")+"\"}";
             }
         });
         return output;

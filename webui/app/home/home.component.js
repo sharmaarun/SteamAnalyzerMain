@@ -91,13 +91,26 @@ var HomeComponent = (function () {
         });
     };
     HomeComponent.prototype.login = function () {
-        if (this.fUser.email != this.user.email || this.fUser.password != this.user.password) {
-            commons_component_1.Commons.toast({ content: "Invalid Username/Password!", timeout: 5000 });
-            return;
-        }
-        this.loggedIn = true;
-        commons_component_1.Commons.setCookie("loggedin", "true");
-        window.location.reload();
+        this.http.post('/login', { username: this.fUser.email, password: this.fUser.password }, this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            if (d.status == "OK") {
+                commons_component_1.Commons.setCookie("loggedin", "true");
+                window.location.href = "/";
+            }
+            else {
+                commons_component_1.Commons.toast({ content: "Invalid Username/Password", timeout: 5000 });
+            }
+        }, function (e) {
+            commons_component_1.Commons.loaderDone("");
+            console.log("");
+            commons_component_1.Commons.toast({ content: "Invalid Username/Password", timeout: 5000 });
+        }, function (s) {
+            commons_component_1.Commons.loaderDone("");
+            console.log("Logged In");
+        });
+        //        if (this.fUser.email != this.user.email || this.fUser.password != this.user.password) {
+        //            Commons.toast({ content: "Invalid Username/Password!", timeout: 5000 });
+        //            return;
+        //        }
         return false;
     };
     HomeComponent.prototype.mapStats = function (data) {

@@ -12,12 +12,14 @@
                     </div>
 
                     <div class="col-lg-12">
-
-
-                        
-                        
-
-
+                        <div class="row">
+                            <template ngFor let-p [ngForOf]="projectJson.stages">
+                                      <div *ngIf="p.plugin.type=='REPORT_STAGE'" class="col-lg-12"  >
+                                    <!--{{projectName}}/{{p.plugin.name}}/{{p.id}}-->
+                                    <iframe [src]="loadUrl('/plugins/'+p.name+'?name='+projectName+'&plugin='+p.name+'&id='+p.id)" class="report-iframe"></iframe>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>

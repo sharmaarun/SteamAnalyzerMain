@@ -70,7 +70,7 @@ public class FilterProcessor implements Serializable {
                     for (String i : itemsArr) {
                         if (argsArr != null) {
                             for (String arg : argsArr) {
-                                if (node.get(arg).asText().contains(i.toLowerCase())) {
+                                if (node.get(arg).asText().toLowerCase().contains(i.toLowerCase())) {
                                     found = true;
                                     System.out.println("Match Found!");
                                     break;

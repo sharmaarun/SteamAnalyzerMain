@@ -8,9 +8,7 @@ package com.sa.compiler.parser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sa.compiler.commons.EntityTypeEnums;
-import com.sa.compiler.entities.Connection;
 import com.sa.compiler.entities.Stage;
-import com.sa.components.base.ComponentsMap;
 import com.sa.pomeditor.PomEditor;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -23,8 +21,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  *
@@ -32,7 +28,6 @@ import java.util.Map.Entry;
  */
 public class ClassWriter {
 
-    private ComponentsMap cMap;
     private String code;
     private String projectPath;
     private ObjectMapper mapper;
@@ -41,7 +36,6 @@ public class ClassWriter {
     public ClassWriter(String projectPath) {
 
         this.projectPath = projectPath;
-        cMap = ComponentsMap.getInstance();
         code = "";
         mapper = new ObjectMapper();
 

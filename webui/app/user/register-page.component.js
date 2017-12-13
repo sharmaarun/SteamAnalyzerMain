@@ -25,19 +25,39 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 var core_1 = require('@angular/core');
 var router_1 = require('@angular/router');
+var http_1 = require("@angular/http");
+var commons_component_1 = require('../home/commons.component');
 var RegisterPage = (function () {
-    function RegisterPage(router) {
+    function RegisterPage(router, http) {
         this.router = router;
+        this.http = http;
         this.title = "Register";
+        this.headers = new http_1.Headers({ "Content-Type": "application/json" });
+        this.user = { username: "", password: "", fName: "", lName: "" };
     }
     RegisterPage.prototype.register = function () {
-        this.router.navigate(['/']);
+        commons_component_1.Commons.loaderShow();
+        if (this.user.username == "" || this.user.password == "" || this.user.fName == "" || this.user.lName == "") {
+            commons_component_1.Commons.loaderDone("");
+            commons_component_1.Commons.toast({ content: "Please fill all the fields!", timeout: 5000 });
+            return;
+        }
+        this.http.post('/signup', this.user, this.headers).map(function (res) { return res.json(); }).subscribe(function (d) {
+            console.log(d);
+            if (d.status == "OK") {
+                commons_component_1.Commons.setCookie("loggedin", "true");
+                window.location.reload();
+            }
+        }, function (e) { commons_component_1.Commons.toast({ content: "Server Error occured!", timeout: 2000 }); }, function (s) {
+            commons_component_1.Commons.toast({ content: "Registred successfully!!", timeout: 2000 });
+        });
     };
     RegisterPage = __decorate([
         core_1.Component({
-            templateUrl: 'app/user/register-page.component.html'
+            templateUrl: 'app/user/register-page.component.html',
+            providers: [http_1.HTTP_PROVIDERS, commons_component_1.Commons]
         }), 
-        __metadata('design:paramtypes', [router_1.Router])
+        __metadata('design:paramtypes', [router_1.Router, http_1.Http])
     ], RegisterPage);
     return RegisterPage;
 }());

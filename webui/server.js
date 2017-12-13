@@ -20,6 +20,7 @@ app      = express();
 var port     = process.env.PORT || 8000;
 var mongoose = require('mongoose');
 var passport = require('passport');
+var LocalStrategy = require('passport-local');
 var flash    = require('connect-flash');
 
 var morgan       = require('morgan');
@@ -32,7 +33,7 @@ var configDB     = require('./config/database.js');
 
 // configuration ===============================================================
 mongoose.connect(configDB.url); // connect to our database
-
+var User = require('./server/model/User');
 // require('./config/passport')(passport); // pass passport for configuration
 
 // set up our express application
@@ -55,7 +56,10 @@ app.use(session({ secret: 'ilovescotchscotchyscotchscotch' })); // session secre
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
 app.use(flash()); // use connect-flash for flash messages stored in session
-
+//  setup passport
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 // routes ======================================================================
 require('./routes.js')(app, passport); // load our routes and pass in our app and fully configured passport
 

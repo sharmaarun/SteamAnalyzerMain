@@ -45,6 +45,7 @@
 	"userName",
 	"text",
 	"createdAt",
-	"geoLocation"
+	"geoLocation",
+	"country"
 	]
 }

@@ -24,13 +24,16 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
+var platform_browser_1 = require('@angular/platform-browser');
 var http_1 = require("@angular/http");
 var router_1 = require('@angular/router');
 var ReportPage = (function () {
-    function ReportPage(http, route) {
+    function ReportPage(http, route, sanitizer) {
         this.http = http;
         this.route = route;
+        this.sanitizer = sanitizer;
         this.projectName = "";
+        this.projectJson = {};
         this.chartsRef = {};
         this.loadedCharts = false;
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
@@ -39,6 +42,9 @@ var ReportPage = (function () {
             var uri = window.location.href.split["/"];
             this.projectName = uri[uri.length - 1];
         }
+        setTimeout(function () {
+            _this_.getProjectJson();
+        }, 1000);
     }
     ReportPage.prototype.ngOnInit = function () {
         var _this = this;
@@ -48,6 +54,23 @@ var ReportPage = (function () {
         });
     };
     ReportPage.prototype.ngOnDestroy = function () {
+    };
+    ReportPage.prototype.loadUrl = function (uri) {
+        return this.sanitizer.bypassSecurityTrustResourceUrl(uri + "&rand=" + Math.round(Math.random() * 10000000));
+    };
+    ReportPage.prototype.getProjectJson = function () {
+        //fetch projects 
+        var _this_ = this;
+        console.log(_this_.projectName);
+        this.http.post('/api/projects/json', { name: _this_.projectName }, this.headers).map(function (res) { return res.json(); }).subscribe(function (dd) {
+            //add one chartline per report
+            _this_.projectJson = dd;
+            console.log(_this_.projectJson);
+        }, function (e) {
+            console.log("Cound not fetch projects list!");
+        }, function (s) {
+            console.log("Fetched Projects!");
+        });
     };
     ReportPage.prototype.getUpdates = function () {
         //fetch projects 
@@ -77,7 +100,7 @@ var ReportPage = (function () {
             templateUrl: 'app/reports/report.component.html',
             providers: [http_1.HTTP_PROVIDERS]
         }), 
-        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute])
+        __metadata('design:paramtypes', [http_1.Http, router_1.ActivatedRoute, platform_browser_1.DomSanitizationService])
     ], ReportPage);
     return ReportPage;
 }());

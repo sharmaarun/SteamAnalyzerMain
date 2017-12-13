@@ -60,7 +60,7 @@ public class Filter extends ProcessStage {
             
             System.out.println("=================================================================");
             System.out.println("Setting up filter : " + getId());
-
+            
         } catch (Exception ex) {
             System.out.println("Could not initialize plugin : ");
             ex.printStackTrace();

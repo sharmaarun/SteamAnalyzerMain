@@ -30,7 +30,7 @@ import org.apache.spark.streaming.api.java.JavaDStream;
  *
  * @author arunsharma
  */
-public abstract class ReportStage extends BaseStage implements Serializable{
+public abstract class ReportStage extends Stage implements Serializable,IConnector{
     
     public ReportStage(JavaSparkContext sc, StreamAnalyzer sa) {
         super(sc, sa);
@@ -40,7 +40,6 @@ public abstract class ReportStage extends BaseStage implements Serializable{
         super(sc, sa, metadata);
     }
     
-    public abstract void fetch(JavaDStream input);
-    public abstract JavaDStream poll();
+     
     
 }

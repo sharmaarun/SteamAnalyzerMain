@@ -16,20 +16,37 @@
 
 import { Component } from '@angular/core';
 import {Router} from '@angular/router';
-
+import {HTTP_PROVIDERS, Http, Response, Headers, RequestOptions} from "@angular/http";
+import {Commons} from '../home/commons.component';
 @Component({
-    templateUrl: 'app/user/register-page.component.html'
+    templateUrl: 'app/user/register-page.component.html',
+    providers: [HTTP_PROVIDERS, Commons]
 })
 
 export class RegisterPage {
     title = "Register";
-    
-    constructor(public router:Router) {
-        
+    headers = new Headers({ "Content-Type": "application/json" });
+    user = { username: "", password: "", fName: "", lName: "" };
+    constructor(public router: Router, public http: Http) {
+
     }
-    
+
     public register() {
-        this.router.navigate(['/']);
+        Commons.loaderShow();
+        if (this.user.username == "" || this.user.password == "" || this.user.fName == "" || this.user.lName == "") {
+            Commons.loaderDone("");
+            Commons.toast({ content: "Please fill all the fields!", timeout: 5000 });
+            return;
+        }
+        this.http.post('/signup', this.user, this.headers).map(res => res.json()).subscribe(d => {
+            console.log(d);
+            if (d.status == "OK") {
+                Commons.setCookie("loggedin", "true");
+                window.location.reload();
+            }
+        }, e => { Commons.toast({content:"Server Error occured!", timeout:2000}); }, s => {
+            Commons.toast({content:"Registred successfully!!", timeout:2000});
+        });
     }
-    
+
 }

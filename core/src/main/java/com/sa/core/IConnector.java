@@ -21,9 +21,6 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 */
 package com.sa.core;
 
-import com.sa.core.commons.dto.RDDDTO;
-import java.util.List;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.streaming.api.java.JavaDStream;
 
 /**
@@ -31,5 +28,6 @@ import org.apache.spark.streaming.api.java.JavaDStream;
  * @author arunsharma
  */
 public interface IConnector {
-    
+    public abstract void fetch(JavaDStream input);
+    public abstract JavaDStream poll();
 }

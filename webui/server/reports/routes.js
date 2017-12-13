@@ -18,5 +18,6 @@ module.exports = function(passport) {
     
     var controller = require('./controller')(passport);
     app.post('/api/reports',controller.list);
+    app.post('/api/reports/json',controller.getJson);
     
 }

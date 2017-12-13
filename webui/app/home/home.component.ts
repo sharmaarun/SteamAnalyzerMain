@@ -59,11 +59,11 @@ export class HomeComponent {
             console.log(Commons.getCookie("loggedin"));
             console.log("Loggedin.");
             this.loggedIn = true;
-        } 
+        }
         console.log(document.cookie);
         if (this.loggedIn) this.init();
 
-        
+
     }
 
     public init() {
@@ -102,13 +102,29 @@ export class HomeComponent {
     }
 
     public login() {
-        if (this.fUser.email != this.user.email || this.fUser.password != this.user.password) {
-            Commons.toast({ content: "Invalid Username/Password!", timeout: 5000 });
-            return;
-        }
-        this.loggedIn = true;
-        Commons.setCookie("loggedin", "true");
-        window.location.reload();
+
+        this.http.post('/login', { username: this.fUser.email, password: this.fUser.password }, this.headers).map(res => res.json()).subscribe(
+            d => {
+                if (d.status == "OK") {
+                    Commons.setCookie("loggedin","true");
+                    window.location.href = "/";
+                } else {
+                    Commons.toast({content:"Invalid Username/Password",timeout:5000});
+                }
+            }, e => {
+                Commons.loaderDone("");
+                console.log("");
+                Commons.toast({content:"Invalid Username/Password",timeout:5000});
+            }, s => {
+                Commons.loaderDone("");
+                console.log("Logged In");
+            }
+        );
+        //        if (this.fUser.email != this.user.email || this.fUser.password != this.user.password) {
+        //            Commons.toast({ content: "Invalid Username/Password!", timeout: 5000 });
+        //            return;
+        //        }
+        
         return false;
     }
 

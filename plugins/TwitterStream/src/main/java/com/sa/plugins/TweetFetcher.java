@@ -21,6 +21,7 @@
  */
 package com.sa.plugins;
 
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -60,19 +61,24 @@ public class TweetFetcher implements Serializable {
         output = iStream.map(new Function<Status, String>() {
             public String call(Status status) {
                 String id = status.getId()+"";
+                String country = status.getPlace()==null?"":status.getPlace().getCountry();
                 String userName = status.getUser()==null?"":status.getUser().getName();
                 String createdAt = status.getCreatedAt()==null?"":status.getCreatedAt().toString();
                 String geoLocation = status.getGeoLocation()==null?"":status.getGeoLocation().toString();
-                String text = status.getText()==null?"":status.getText();
-                text = text.replaceAll("[\\\n\\\"\\\t\\\r]","");
-                text = text.replaceAll("\\\\","");
+                String text = status.getText()==null?"":status.getText().replaceAll("[^a-zA-Z0-9_\\s\\.,]", "");
+//                text = text.replaceAll("[\\\n\\\t\\\r]","");
+//                text = text.replaceAll("\"","");
+//                text = text.replaceAll("\\\\","");
+                text = new String(JsonStringEncoder.getInstance().quoteAsString(text));
                 return "{\"id\":\""+id+"\","
                         + "\"text\":\""+text+"\","
                         + "\"createdAt\":\""+createdAt+"\","
                         + "\"geoLocation\":\""+geoLocation+"\"}"+"\","
+                        + "\"country\":\""+country+"\"}"+"\","
                         + "\"userName\":\""+userName+"\"}";
             }
         });
+        
         return output;
     }
 

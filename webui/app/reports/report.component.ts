@@ -16,6 +16,7 @@
 
 
 import {Component, ViewChildren} from '@angular/core';
+import {DomSanitizationService} from '@angular/platform-browser';
 import {HTTP_PROVIDERS, Http, Response, Headers, RequestOptions} from "@angular/http";
 import {Observable} from "rxjs/Rx";
 import {Commons} from '../home/commons.component';
@@ -37,17 +38,46 @@ export class ReportPage {
     }
 
     public projectName = "";
+    public projectJson = {};
     public chartsRef = {};
     public loadedCharts = false;
     headers = new Headers({ 'Content-Type': 'application/json' });
 
-    public constructor(public http: Http, public route: ActivatedRoute) {
+    public constructor(public http: Http, public route: ActivatedRoute, public sanitizer: DomSanitizationService) {
         var _this_ = this;
         if (this.projectName == undefined) {
             var uri = window.location.href.split["/"];
             this.projectName = uri[uri.length - 1];
+
         }
+        setTimeout(function() {
+            _this_.getProjectJson();
+        }, 1000);
+        
+        
+
     }
+    public loadUrl(uri) {
+        return this.sanitizer.bypassSecurityTrustResourceUrl(uri+"&rand=" + Math.round(Math.random() * 10000000);
+    }
+
+    private getProjectJson() {
+        //fetch projects 
+        var _this_ = this;
+        console.log(_this_.projectName);
+        this.http.post('/api/projects/json', { name: _this_.projectName }, this.headers).map(res => res.json()).subscribe(
+            dd => {
+                //add one chartline per report
+                _this_.projectJson = dd;
+                console.log(_this_.projectJson);
+            }, e => {
+                console.log("Cound not fetch projects list!");
+            }, s => {
+                console.log("Fetched Projects!");
+            }
+        );
+    }
+
     private getUpdates() {
         //fetch projects 
         var _this_ = this;
@@ -57,7 +87,7 @@ export class ReportPage {
                 if (dd != undefined && dd.length > 0) {
                     //add one chartline per report
 
-                    
+
                 }
             }, e => {
                 console.log("Cound not fetch projects list!");
@@ -67,7 +97,7 @@ export class ReportPage {
         );
     }
 
-    
+
     private appendRandom(arr) {
         var tmp = 0;
         for (var i = 0; i < arr.length; i++) {

@@ -1,0 +1,40 @@
+{
+	"name":"LiveDataWorldMap",
+	"_v":"1.0.0",
+	"type":"REPORT_STAGE",
+	"plugin":"LiveDataWorldMap",
+	"fqcn":"com.sa.plugins.LiveDataWorldMap",
+	"package":"com.sa.plugins",
+        "jar":"target/SALiveDataWorldMap-1.0-SNAPSHOT.jar",
+	"description" : "Plugin to show live stream of geolocation data on a world map with animation.",
+	"inputs":[
+		{
+			"id":"in1",
+			"name":"data-in"
+		}
+	],
+	"outputs":[
+		{
+			"id":"out1",
+			"name":"report"
+		}
+	],
+	"clientParams":[
+		{
+		"type":"autocomplete",
+		"name":"Geolocation",
+		"param":"geolocation_field",
+		"description":"Enter the name of the gealocation feild in the incoming data node from the previous stage."
+		}, {
+		"type":"autocomplete",
+		"name":"Text",
+		"param":"text_field",
+		"description":"Enter the name of the text field in the incoming data node from the previous stage."
+		}, {
+		"type":"autocomplete",
+		"name":"Unique ID",
+		"param":"id_field",
+		"description":"Enter the unique id field the incoming data node from the previous stage."
+		}
+	]
+}

@@ -720,13 +720,14 @@ export class CreateProjectPage {
         var _this_ = this;
         var host = window.location.href.match(/^https?\:\/\/([^\/:?#]+)(?:[\/:?#]|$)/i)[1];
         //create connection
+        _this_.appendToTemrinal("Connecting ...");
         var socket = new WebSocket("ws://" + host + ":" + port);
         socket.onmessage = function(d) {
             _this_.appendToTemrinal(d.data);
             _this_.getProjectStatus(_this_.projectName,_this_);
         }
         socket.onopen = function(e) {
-            _this_.appendToTemrinal("Connecting ...");
+            _this_.appendToTemrinal("Connected.");
             
         }
         socket.onclose = function(e) {
